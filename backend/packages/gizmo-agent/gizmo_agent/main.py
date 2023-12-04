@@ -15,7 +15,7 @@ from langchain.schema.runnable import (
 from gizmo_agent.agent_types import (
     GizmoAgentType,
     get_openai_function_agent,
-    # get_xml_agent,
+    get_ffm_function_agent,
 )
 from gizmo_agent.tools import TOOL_OPTIONS, TOOLS, AvailableTools, get_retrieval_tool
 
@@ -53,14 +53,8 @@ class ConfigurableAgent(RunnableBinding):
                 _tools.append(TOOLS[_tool]())
         if agent == GizmoAgentType.GPT_35_TURBO:
             _agent = get_openai_function_agent(_tools, system_message)
-        # elif agent == GizmoAgentType.GPT_4:
-        #     _agent = get_openai_function_agent(_tools, system_message, gpt_4=True)
-        # elif agent == GizmoAgentType.AZURE_OPENAI:
-        #     _agent = get_openai_function_agent(_tools, system_message, azure=True)
-        # elif agent == GizmoAgentType.CLAUDE2:
-        #     _agent = get_xml_agent(_tools, system_message)
-        # elif agent == GizmoAgentType.BEDROCK_CLAUDE2:
-        #     _agent = get_xml_agent(_tools, system_message, bedrock=True)
+        elif agent == GizmoAgentType.FFM:
+            _agent = get_ffm_function_agent(_tools, system_message)
         else:
             raise ValueError("Unexpected agent type")
         agent_executor = get_agent_executor(
@@ -89,16 +83,7 @@ dnd_llm = ChatOpenAI(
 ).configurable_alternatives(
     ConfigurableField(id="llm", name="LLM"),
     default_key="gpt-35-turbo",
-    # azure_openai=AzureChatOpenAI(
-    #     temperature=0,
-    #     deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-    #     openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
-    #     openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-    #     openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    #     streaming=True,
-    # ),
 )
-
 
 dnd_bot = create_dnd_bot(dnd_llm, checkpoint=RedisCheckpoint()).with_types(
     input_type=AgentInput, output_type=AgentOutput

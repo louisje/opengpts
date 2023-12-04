@@ -85,6 +85,9 @@ export default function SingleOptionField(props: {
 }
 
 const TOOL_DESCRIPTIONS = {
+  "NTD Currency Converter": "Convert USD to NTD.",
+  "Open Weather Map": "API quering weather.",
+  "Python REPL Tool": "Python script interpreter.",
   Retrieval: "Look up information in uploaded files.",
   "DDG Search":
     "Search the web with [DuckDuckGo](https://pypi.org/project/duckduckgo-search/).",
