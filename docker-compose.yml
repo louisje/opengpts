@@ -10,8 +10,8 @@ services:
       - ./redis-volume:/data
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: backend/
+      dockerfile: Dockerfile
     ports:
       - "8100:8100"  # Backend is accessible on localhost:8100
     depends_on:
@@ -24,9 +24,20 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: frontend/
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"  # Frontend is accessible on localhost:5173
     environment:
       VITE_BACKEND_URL: "http://backend:8100"
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "443:443"
+    volumes:
+      - ./frontend/dist:/var/www/html
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - backend
