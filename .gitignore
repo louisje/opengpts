@@ -1,5 +1,6 @@
 .env.gcp.yaml
 .env
+.vscode
 nginx/ssl
 /agent_executor
 /gizmo_agent
@@ -9,3 +10,4 @@ nginx/ssl
 /langchain_experimental
 /libs
 /redis-volume/
+/ollama

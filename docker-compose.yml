@@ -9,6 +9,7 @@ services:
     volumes:
       - ./redis-volume:/data
   backend:
+    container_name: backend
     build:
       context: backend/
       dockerfile: Dockerfile
@@ -23,6 +24,7 @@ services:
       REDIS_URL: "redis://redis:6379"
 
   frontend:
+    container_name: frontend
     build:
       context: frontend/
       dockerfile: Dockerfile
@@ -32,6 +34,7 @@ services:
       VITE_BACKEND_URL: "http://backend:8100"
 
   nginx:
+    container_name: nginx
     image: nginx:latest
     ports:
       - "443:443"
@@ -41,3 +44,11 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
     depends_on:
       - backend
+
+  ollama:
+    container_name: ollama
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama:/root/.ollama
