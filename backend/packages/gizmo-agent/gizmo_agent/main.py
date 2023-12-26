@@ -14,6 +14,7 @@ from langchain.schema.runnable import (
 
 from gizmo_agent.agent_types import (
     GizmoAgentType,
+    get_ollama_function_agent,
     get_openai_function_agent,
     get_ffm_function_agent,
 )
@@ -53,8 +54,12 @@ class ConfigurableAgent(RunnableBinding):
                 _tools.append(TOOLS[_tool]())
         if agent == GizmoAgentType.GPT_35_TURBO:
             _agent = get_openai_function_agent(_tools, system_message)
+        elif agent == GizmoAgentType.GPT_4:
+            _agent = get_openai_function_agent(_tools, system_message, gpt_4=True)
         elif agent == GizmoAgentType.FFM:
             _agent = get_ffm_function_agent(_tools, system_message)
+        elif agent == GizmoAgentType.OLLAMA:
+            _agent = get_ollama_function_agent(_tools, system_message)
         else:
             raise ValueError("Unexpected agent type")
         agent_executor = get_agent_executor(

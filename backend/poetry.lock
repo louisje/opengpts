@@ -1116,7 +1116,10 @@ boto3 = "^1.28.84"
 bs4 = "^0.0.1"
 duckduckgo-search = "^3.9.4"
 kay = "^0.1.2"
-langchain = ">=0.0.333"
+langchain = {path = "../langchain/libs/langchain", develop = true}
+langchain-cli = {path = "../langchain/libs/cli", develop = true}
+langchain-community = {path = "../langchain/libs/community", develop = true}
+langchain-core = {path = "../langchain/libs/core", develop = true}
 langchain-experimental = {path = "../langchain/libs/experimental", develop = true}
 openai = ">=0.5.0,<1.0"
 pdfminer-six = "^20221105"
