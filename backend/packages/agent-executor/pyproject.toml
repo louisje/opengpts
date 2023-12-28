@@ -9,11 +9,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
-langchain = ">=0.0.333"
+langchain = {path = "../langchain/libs/langchain", develop = true}
 python-magic = "^0.4.27"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = {path = "../langchain/libs/cli", develop = true}
 
 [build-system]
 requires = [
