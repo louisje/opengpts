@@ -10,7 +10,8 @@ def get_ollama_function_agent(tools, system_message):
     llm = ChatOllama(
         base_url="http://ollama:11434",
         model="llama2",
-        streaming=True,
+        stop=["[INST]"],
+        streaming=False,
         num_gpu=0,
     )
 

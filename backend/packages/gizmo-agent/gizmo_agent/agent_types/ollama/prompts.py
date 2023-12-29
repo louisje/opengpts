@@ -41,7 +41,6 @@ def _custom_parser(multiline_string: str) -> str:
 def parse_output(msg):
     try:
         matches = re.findall(r"```(json)?(.*)```", msg.content, re.DOTALL)
-        print(matches) ##
         if not matches:
             return AgentFinish(return_values={"output": msg.content}, log=msg.content)
         json_str = matches[0][1]
@@ -50,7 +49,10 @@ def parse_output(msg):
         parsed = json.loads(json_str)
 
         if parsed["action"] is not None:
-            return AgentAction(parsed["action"], parsed["action_input"], msg.content)
+            if parsed["action"] == "Final Answer":
+                return AgentFinish(return_values={"output": parsed["action_input"]}, log=msg.content)
+            else:
+                return AgentAction(parsed["action"], parsed["action_input"], parsed["action_input"])
         else:
             return AgentFinish(return_values={"output": msg.content}, log=msg.content)
     except Exception as e:
@@ -70,14 +72,25 @@ Here is the tools you can use:
 Response Format
 ---------------
 
-If you want to use tool, please use following Markdown format (must including "```"):
+You have to reponse in one of the two formats.
 
-```json
-{{
-  "action": string, \\ The tool name you are using, must be one of {tool_names}
-  "action_input": string \\ The content of tool input
-}}
-```"""
+1. If you think you need to invoke a tool, please response in the following markdown format:
+    ```json
+    {{
+        "action": string, \\ The tool name you are invoking, must be one of [ {tool_names} ]
+        "action_input": string \\ The content of tool input
+    }}
+    ```
+2. Once you think you have the answer, just send it back in the following markdown format:
+    ```json
+    {{
+        "action": "Final Answer",
+        "action_input": "The answer you got ..."
+    }}
+    ```
+
+Now let's start our conversation. Please tell me something about your problem.
+"""
 
 conversational_prompt = ChatPromptTemplate.from_messages(
     [
