@@ -1,8 +1,8 @@
 from enum import Enum
 
 from .openai import get_openai_function_agent
-from .ffm.agent import get_ffm_function_agent
-from .ollama.agent import get_ollama_function_agent
+from .ffm import get_ffm_function_agent
+from .ollama import get_ollama_function_agent
 from .xml.agent import get_xml_agent
 
 

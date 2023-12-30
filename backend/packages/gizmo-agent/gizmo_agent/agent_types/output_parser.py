@@ -1,13 +1,7 @@
 import json
 import re
 
-from typing import Union
-
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import AgentAction, AgentFinish
-from langchain.output_parsers.json import parse_json_markdown
-
-from langchain_core.exceptions import OutputParserException
 
 def _replace_new_line(match: re.Match[str]) -> str:
     value = match.group(2)
@@ -41,7 +35,6 @@ def _custom_parser(multiline_string: str) -> str:
 def parse_output(msg):
     try:
         matches = re.findall(r"```(json)?(.*)```", msg.content, re.DOTALL)
-        print(matches) ##
         if not matches:
             return AgentFinish(return_values={"output": msg.content}, log=msg.content)
         json_str = matches[0][1]
@@ -50,39 +43,13 @@ def parse_output(msg):
         parsed = json.loads(json_str)
 
         if parsed["action"] is not None:
-            return AgentAction(parsed["action"], parsed["action_input"], msg.content)
+            if parsed["action"] == "Final Answer":
+                return AgentFinish(return_values={"output": parsed["action_input"]}, log=msg.content)
+            else:
+                return AgentAction(parsed["action"], parsed["action_input"], parsed["action_input"])
         else:
             return AgentFinish(return_values={"output": msg.content}, log=msg.content)
     except Exception as e:
         print(f"Could not parse LLM output. ({e})")
         return AgentFinish(return_values={"output": msg.content}, log=msg.content)
-
-template = """{system_message}
-
-工具的使用
-----------
-
-你可以要求使用工具取得更多有用的資訊來回答提問。
-下面是你可以用的工具：
-
-{tools}
-
-回覆內容格式
-------------
-
-如果你想要使用工具，請以下面 Markdown 格式回覆（請務必包含"```"的部分）：
-
-```json
-{{
-  "action": string, \\ 你要使用的工具名稱。必須是這幾個其中之一 {tool_names}
-  "action_input": string \\ 要輸入給工具的內容
-}}
-```"""
-
-conversational_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", template),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-)
 
