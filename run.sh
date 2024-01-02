@@ -12,7 +12,7 @@ else
     docker image prune -f
 fi
 
-if [ "$1" = "--build" ]; then
+if [ "$1" = "--build-only" ]; then
     shift
     docker-compose build "$@"
     exit
