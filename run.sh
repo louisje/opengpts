@@ -14,9 +14,9 @@ fi
 
 if [ "$1" = "--build-only" ]; then
     shift
-    docker-compose build "$@"
+    docker compose build "$@"
     exit
 fi
 
-docker-compose up --build "$@"
+docker compose up --build "$@"
 
