@@ -3,6 +3,7 @@
 -e packages/langchain/libs/core
 -e packages/langchain/libs/cli
 -e packages/langchain/libs/langchain
+-e packages/langchain/libs/experimental
 langserve>=0.0.23,<=0.0.32
 permchain
 python-multipart
