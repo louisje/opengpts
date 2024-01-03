@@ -46,7 +46,7 @@ def parse_output(msg):
             if parsed["action"] == "Final Answer":
                 return AgentFinish(return_values={"output": parsed["action_input"]}, log=msg.content)
             else:
-                return AgentAction(parsed["action"], parsed["action_input"], parsed["action_input"])
+                return AgentAction(parsed["action"], parsed["action_input"], log=msg.content)
         else:
             return AgentFinish(return_values={"output": msg.content}, log=msg.content)
     except Exception as e:
