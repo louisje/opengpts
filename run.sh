@@ -10,6 +10,9 @@ else
 
     docker container prune -f
     docker image prune -f
+    if [ "$1" = "--prune-only" ]; then
+        exit
+    fi
 fi
 
 if [ "$1" = "--build-only" ]; then
