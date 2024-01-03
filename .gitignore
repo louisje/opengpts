@@ -9,5 +9,5 @@ nginx/ssl
 /langchain_community
 /langchain_experimental
 /libs
-/redis-volume/
+/redis-volume
 /ollama

@@ -24,13 +24,7 @@ template = """
   "action": string, \\ 你要使用的工具名稱。必須是這幾個其中之一 {tool_names}
   "action_input": string \\ 要輸入給工具的內容
 }}
-```
-
----
-
-好了，接下來我們開始對話，請不吝告訴我你的想法。
-
-"""
+```"""
 
 conversational_prompt = ChatPromptTemplate.from_messages(
     [
