@@ -7,10 +7,10 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from .prompts import conversational_prompt
 from .output_parser import parse_output
 
-def get_ollama_function_agent(tools, system_message):
+def get_ollama_function_agent(tools, system_message, model:str = "llama2"):
     llm = ChatOllama(
         base_url="http://ollama:11434",
-        model="llama2",
+        model=model,
         stop=["[INST]","[/INST]"],
         streaming=False,
         num_gpu=0,

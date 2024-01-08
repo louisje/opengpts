@@ -10,7 +10,8 @@ class GizmoAgentType(str, Enum):
     GPT_4 = "GPT 4"
     GPT_35_TURBO = "GPT 3.5 Turbo"
     FFM = "FFM"
-    OLLAMA = "Ollama"
+    OLLAMA = "Ollama (llama2-7b-chat)"
+    TAIWAN = "Ollama (taiwan-llm-7b-v2.1-chat)"
 
 
 __all__ = [

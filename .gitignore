@@ -4,3 +4,4 @@
 nginx/ssl
 /redis-volume
 /ollama
+/ollama-webui
