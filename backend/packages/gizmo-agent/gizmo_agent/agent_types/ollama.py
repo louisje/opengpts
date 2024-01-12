@@ -1,8 +1,9 @@
 import os
 
-from langchain.chat_models import ChatOllama
 from langchain.tools.render import render_text_description
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+from langchain_community.chat_models import ChatOllama
 
 from .prompts import conversational_prompt
 from .output_parser import parse_output

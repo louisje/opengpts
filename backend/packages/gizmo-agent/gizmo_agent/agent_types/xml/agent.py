@@ -1,9 +1,10 @@
 import os
 
 import boto3
-from langchain.chat_models import BedrockChat, ChatAnthropic
 from langchain.schema.messages import AIMessage, HumanMessage
 from langchain.tools.render import render_text_description
+
+from langchain_community.chat_models import BedrockChat, ChatAnthropic
 
 from .prompts import conversational_prompt, parse_output
 

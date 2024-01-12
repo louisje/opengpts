@@ -4,6 +4,7 @@
 -e packages/langchain/libs/cli
 -e packages/langchain/libs/langchain
 -e packages/langchain/libs/experimental
+-e packages/langchain/libs/parners/openai
 langserve>=0.0.23,<=0.0.32
 permchain
 python-multipart

@@ -1,7 +1,7 @@
 import os
 
 from langchain.agents.output_parsers import JSONAgentOutputParser
-from langchain.chat_models import ChatFFM
+from langchain_community.chat_models import ChatFFM
 from langchain.tools.render import render_text_description
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 

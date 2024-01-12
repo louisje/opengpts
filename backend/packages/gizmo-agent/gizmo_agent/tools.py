@@ -1,12 +1,14 @@
 from enum import Enum
 
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.retrievers import WikipediaRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain.tools.tavily_search import TavilyAnswer, TavilySearchResults
-from langchain.tools import OpenWeatherMapQueryRun, DuckDuckGoSearchRun, Tool
+from langchain.tools import Tool
 from langchain.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain.vectorstores.redis import RedisFilter
+
+from langchain_community.retrievers import WikipediaRetriever
+from langchain_community.tools import OpenWeatherMapQueryRun, DuckDuckGoSearchRun
 
 from langchain_experimental.tools import PythonREPLTool
 

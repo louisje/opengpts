@@ -10,7 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 # langchain = ">=0.0.333"
-openai = ">=0.5.0,<1.0"
+openai = "^1.6.1"
 anthropic = "^0.3.11"
 langchain = {path = "../langchain/libs/langchain", develop = true}
 langchain-core = {path = "../langchain/libs/core", develop = true}

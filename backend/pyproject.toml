@@ -18,6 +18,7 @@ langchain-core = {path = "packages/langchain/libs/core", develop = true}
 langchain-cli = {path = "packages/langchain/libs/cli", develop = true}
 langchain-community = {path = "packages/langchain/libs/community", develop = true}
 langchain-experimental = { path = "packages/langchain/libs/experimental", develop = true }
+langchain-openai = { path = "packages/langchain/libs/partners/openai", develop = true }
 gizmo-agent = {path = "packages/gizmo-agent", develop = true}
 agent-executor = {path = "packages/agent-executor", develop = true}
 orjson = "^3.9.10"
