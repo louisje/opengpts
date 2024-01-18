@@ -1,10 +1,11 @@
-* [ ] ollama
+* [X] ollama
 * [ ] OpenAI SDK
 * [ ] AutoGPT
-* [ ] Retrival
-* [ ] ollama-webui
+* [X] Retrival
+* [X] ollama-webui
 * [ ] GPT4All
 * [ ] llama2.cpp
 * [ ] Gremini
 * [ ] Grok
-* [ ] llama2-7b-taiwan
+* [X] llama2-7b-taiwan
+* [ ] MistralAI
