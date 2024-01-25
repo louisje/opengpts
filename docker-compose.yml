@@ -2,34 +2,38 @@ version: "3"
 
 services:
   redis:
-    container_name: redis
+    container_name: opengpts-redis
     image: redis/redis-stack-server:latest
     ports:
       - "6379:6379"
     volumes:
       - ./redis-volume:/data
   backend:
-    container_name: backend
+    container_name: opengpts-backend
     build:
       context: backend
     ports:
-      - "8100:8100" # Backend is accessible on localhost:8100
+      - "8100:8000" # Backend is accessible on localhost:8100
     depends_on:
       - redis
     env_file:
       - .env
+    volumes:
+      - ./backend:/backend
     environment:
-      PORT: 8100
-      REDIS_URL: "redis://redis:6379"
-
+      REDIS_URL: "redis://opengpts-redis:6379"
+    command:
+      - --reload
   frontend:
-    container_name: frontend
+    container_name: opengpts-frontend
     build:
       context: frontend
+    volumes:
+      - ./frontend/src:/frontend/src
     ports:
       - "5173:5173" # Frontend is accessible on localhost:5173
     environment:
-      VITE_BACKEND_URL: "http://backend:8100"
+      VITE_BACKEND_URL: "http://opengpts-backend:8000"
 
   nginx:
     container_name: nginx
@@ -62,4 +66,3 @@ services:
       - 80:8080
     environment:
       - 'OLLAMA_API_BASE_URL=http://ollama:11434/api'
-

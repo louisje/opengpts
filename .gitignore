@@ -1,7 +1,8 @@
+*.env
 .env.gcp.yaml
 .env
 .vscode
 nginx/ssl
-/redis-volume
 /ollama
 /ollama-webui
+redis-volume/

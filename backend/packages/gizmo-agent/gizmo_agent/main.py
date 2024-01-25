@@ -18,7 +18,13 @@ from gizmo_agent.agent_types import (
     get_openai_function_agent,
     get_ffm_function_agent,
 )
-from gizmo_agent.tools import TOOL_OPTIONS, TOOLS, AvailableTools, get_retrieval_tool
+from gizmo_agent.tools import (
+    RETRIEVAL_DESCRIPTION,
+    TOOL_OPTIONS,
+    TOOLS,
+    AvailableTools,
+    get_retrieval_tool,
+)
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
 
@@ -27,6 +33,7 @@ class ConfigurableAgent(RunnableBinding):
     tools: Sequence[str]
     agent: GizmoAgentType
     system_message: str = DEFAULT_SYSTEM_MESSAGE
+    retrieval_description: str = RETRIEVAL_DESCRIPTION
     assistant_id: Optional[str] = None
     user_id: Optional[str] = None
 
@@ -37,6 +44,7 @@ class ConfigurableAgent(RunnableBinding):
         agent: GizmoAgentType = GizmoAgentType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: Optional[str] = None,
+        retrieval_description: str = RETRIEVAL_DESCRIPTION,
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[Mapping[str, Any]] = None,
         **others: Any,
@@ -49,7 +57,7 @@ class ConfigurableAgent(RunnableBinding):
                     raise ValueError(
                         "assistant_id must be provided if Retrieval tool is used"
                     )
-                _tools.append(get_retrieval_tool(assistant_id))
+                _tools.append(get_retrieval_tool(assistant_id, retrieval_description))
             else:
                 _tools.append(TOOLS[_tool]())
         if agent == GizmoAgentType.GPT_35_TURBO:
@@ -71,6 +79,7 @@ class ConfigurableAgent(RunnableBinding):
             tools=tools,
             agent=agent,
             system_message=system_message,
+            retrieval_description=retrieval_description,
             bound=agent_executor,
             kwargs=kwargs or {},
             config=config or {},
@@ -102,6 +111,7 @@ agent = (
         agent=GizmoAgentType.GPT_35_TURBO,
         tools=[],
         system_message=DEFAULT_SYSTEM_MESSAGE,
+        retrieval_description=RETRIEVAL_DESCRIPTION,
         assistant_id=None,
     )
     .configurable_fields(
@@ -115,6 +125,9 @@ agent = (
             name="Tools",
             options=TOOL_OPTIONS,
             default=[],
+        ),
+        retrieval_description=ConfigurableField(
+            id="retrieval_description", name="Retrieval Description"
         ),
     )
     .configurable_alternatives(

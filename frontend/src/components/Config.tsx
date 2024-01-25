@@ -163,7 +163,10 @@ function MultiOptionField(props: {
 }
 
 function PublicLink(props: { assistantId: string }) {
-  const link = window.location.href + "?shared_id=" + props.assistantId;
+  const currentLink = window.location.href;
+  const link = currentLink.includes("shared_id=")
+    ? currentLink
+    : currentLink + "?shared_id=" + props.assistantId;
   return (
     <div className="flex rounded-md shadow-sm mb-4">
       <button
@@ -322,6 +325,30 @@ export function Config(props: {
                   readonly={readonly}
                 />
               );
+            } else if (
+              key === "type==agent/retrieval_description" &&
+              (
+                values?.configurable?.["type==agent/tools"] as
+                  | string[]
+                  | undefined
+              )?.includes("Retrieval")
+            ) {
+              return (
+                <StringField
+                  key={key}
+                  id={key}
+                  field={value}
+                  title={title}
+                  value={values?.configurable?.[key] as string}
+                  setValue={(value: string) =>
+                    setValues({
+                      ...values,
+                      configurable: { ...values!.configurable, [key]: value },
+                    })
+                  }
+                  readonly={readonly}
+                />
+              );
             } else if (key === "type==agent/tools") {
               return (
                 <MultiOptionField
@@ -349,6 +376,7 @@ export function Config(props: {
               setFiles={setFiles}
             />
           )}
+          {}
           <SingleOptionField
             id="public"
             field={{
