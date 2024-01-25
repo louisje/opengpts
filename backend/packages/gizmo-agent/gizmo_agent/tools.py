@@ -86,6 +86,7 @@ TOOLS = {
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
     AvailableTools.WIKIPEDIA: _get_wikipedia,
     AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
+    AvailableTools.TAVILY: _get_tavily,
     AvailableTools.NTD_CURRENCY_CONVERTER: _get_ntd_currency_converter,
     AvailableTools.OPEN_WEATHER_MAP: _get_open_weather_map,
     AvailableTools.PYTHON_REPL_TOOL: _get_python_repl_tool,
