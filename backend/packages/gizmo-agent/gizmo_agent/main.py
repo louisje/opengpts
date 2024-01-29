@@ -68,8 +68,8 @@ class ConfigurableAgent(RunnableBinding):
             _agent = get_ffm_function_agent(_tools, system_message)
         elif agent == GizmoAgentType.OLLAMA:
             _agent = get_ollama_function_agent(_tools, system_message)
-        elif agent == GizmoAgentType.TAIWAN:
-            _agent = get_ollama_function_agent(_tools, system_message, model="taiwan-llm-7b-v2.1-chat")
+        elif agent == GizmoAgentType.MISTRAL:
+            _agent = get_ollama_function_agent(_tools, system_message, model="mistral")
         else:
             raise ValueError("Unexpected agent type")
         agent_executor = get_agent_executor(

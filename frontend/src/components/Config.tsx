@@ -93,6 +93,8 @@ const TOOL_DESCRIPTIONS = {
     "Search the web with [DuckDuckGo](https://pypi.org/project/duckduckgo-search/).",
   "Search (Tavily)":
     "Uses the [Tavily](https://app.tavily.com/) search engine. Includes sources in the response.",
+  "Google Search":
+    "Search Google",
   "Search (short answer, Tavily)":
     "Uses the [Tavily](https://app.tavily.com/) search engine. This returns only the answer, no supporting evidence.",
   "You.com Search":

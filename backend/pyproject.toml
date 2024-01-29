@@ -29,6 +29,7 @@ permchain = ">=0.0.8"
 pydantic = "<2.0"
 python-magic = "^0.4.27"
 pyowm = "^3.3.0"
+google-api-python-client = "^2.115.0"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

@@ -4,4 +4,4 @@
 * [ ] Gemini/PaLM
 * [X] llama2-7b-taiwan
 * [ ] MistralAI
-* [ ] Upload image
+* [ ] Image uploading

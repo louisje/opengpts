@@ -36,7 +36,7 @@ services:
       VITE_BACKEND_URL: "http://opengpts-backend:8000"
 
   nginx:
-    container_name: nginx
+    container_name: opengpts-nginx
     image: nginx:latest
     ports:
       - "443:443"

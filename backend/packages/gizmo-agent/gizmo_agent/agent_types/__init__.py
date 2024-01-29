@@ -11,7 +11,7 @@ class GizmoAgentType(str, Enum):
     GPT_35_TURBO = "OpenAI (gpt-3.5-turbo)"
     FFM = "FFM (ffm-llama2-70b-chat)"
     OLLAMA = "Ollama (llama2-7b-chat)"
-    TAIWAN = "Ollama (taiwan-llm-7b-v2.1-chat)"
+    MISTRAL = "Ollama (mistral)"
 
 
 __all__ = [

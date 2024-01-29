@@ -6,14 +6,15 @@ from langchain.tools.tavily_search import TavilyAnswer, TavilySearchResults
 from langchain.tools import Tool
 from langchain.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain.vectorstores.redis import RedisFilter
+from langchain.tools.google_search import GoogleSearchRun, GoogleSearchResults
 
 from langchain_community.retrievers import WikipediaRetriever
 from langchain_community.tools import OpenWeatherMapQueryRun, DuckDuckGoSearchRun
+from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 
 from langchain_experimental.tools import PythonREPLTool
 
 from gizmo_agent.ingest import vstore
-from gizmo_agent.agent_types import GizmoAgentType
 
 
 class DDGInput(BaseModel):
@@ -37,6 +38,9 @@ def get_retrieval_tool(assistant_id: str, description: str):
         description,
     )
 
+
+def _get_google_search():
+    return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper())
 
 def _get_duck_duck_go():
     return DuckDuckGoSearchRun(args_schema=DDGInput)
@@ -72,24 +76,26 @@ def _get_ntd_currency_converter():
 
 
 class AvailableTools(str, Enum):
-    DDG_SEARCH = "DDG Search"
-    TAVILY = "Search (Tavily)"
-    TAVILY_ANSWER = "Search (short answer, Tavily)"
+#   DDG_SEARCH = "DDG Search"
+#   TAVILY = "Search (Tavily)"
+#   TAVILY_ANSWER = "Search (short answer, Tavily)"
     RETRIEVAL = "Retrieval"
     WIKIPEDIA = "Wikipedia"
-    NTD_CURRENCY_CONVERTER = "NTD Currency Converter"
+#   NTD_CURRENCY_CONVERTER = "NTD Currency Converter"
     OPEN_WEATHER_MAP = "Open Weather Map"
     PYTHON_REPL_TOOL = "Python REPL Tool"
+    GOOGLE_SEARCH = "Google Search"
 
 
 TOOLS = {
-    AvailableTools.DDG_SEARCH: _get_duck_duck_go,
+#   AvailableTools.DDG_SEARCH: _get_duck_duck_go,
     AvailableTools.WIKIPEDIA: _get_wikipedia,
-    AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
-    AvailableTools.TAVILY: _get_tavily,
-    AvailableTools.NTD_CURRENCY_CONVERTER: _get_ntd_currency_converter,
+#   AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
+#   AvailableTools.TAVILY: _get_tavily,
+#   AvailableTools.NTD_CURRENCY_CONVERTER: _get_ntd_currency_converter,
     AvailableTools.OPEN_WEATHER_MAP: _get_open_weather_map,
     AvailableTools.PYTHON_REPL_TOOL: _get_python_repl_tool,
+    AvailableTools.GOOGLE_SEARCH: _get_google_search,
 }
 
 TOOL_OPTIONS = {e.value: e.value for e in AvailableTools}
