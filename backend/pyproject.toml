@@ -7,29 +7,41 @@ readme = "README.md"
 packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.9.0"
 sse-starlette = "^1.6.5"
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
 langserve = "0.0.32"
-langchain = {path = "packages/langchain/libs/langchain", develop = true}
 langchain-core = {path = "packages/langchain/libs/core", develop = true}
 langchain-cli = {path = "packages/langchain/libs/cli", develop = true}
 langchain-community = {path = "packages/langchain/libs/community", develop = true}
-langchain-experimental = { path = "packages/langchain/libs/experimental", develop = true }
-langchain-openai = { path = "packages/langchain/libs/partners/openai", develop = true }
-gizmo-agent = {path = "packages/gizmo-agent", develop = true}
-agent-executor = {path = "packages/agent-executor", develop = true}
+langchain-experimental = {path = "packages/langchain/libs/experimental", develop = true}
+# Uncomment if you need to work from a development branch
+# This will only work for local development though!
+# langchain = { git = "git@github.com:langchain-ai/langchain.git/", branch = "nc/subclass-runnable-binding" , subdirectory = "libs/langchain"}
 orjson = "^3.9.10"
 redis = "^5.0.1"
 python-multipart = "^0.0.6"
 tiktoken = "^0.5.1"
 permchain = ">=0.0.8"
-pydantic = "<2.0"
-python-magic = "^0.4.27"
 pyowm = "^3.3.0"
 google-api-python-client = "^2.115.0"
+langchain = {path = "packages/langchain/libs/langchain", develop = true}
+langgraph = "^0.0.19"
+pydantic = "<2.0"
+python-magic = "^0.4.27"
+langchain-openai = { path = "packages/langchain/libs/partners/openai", develop = true }
+beautifulsoup4 = "^4.12.3"
+boto3 = "^1.34.28"
+duckduckgo-search = "^4.2"
+arxiv = "^2.1.0"
+kay = "^0.1.2"
+xmltodict = "^0.13.0"
+wikipedia = "^1.4.0"
+langchain-google-vertexai = "^0.0.3"
+setuptools = "^69.0.3"
+pdfminer-six = "^20231228"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

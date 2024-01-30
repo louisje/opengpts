@@ -32,7 +32,7 @@ def _custom_parser(multiline_string: str) -> str:
 
     return multiline_string
 
-def parse_output(msg):
+def parse_output(msg) -> AgentAction | AgentFinish:
     try:
         matches = re.findall(r"```(json)?(.*)```", msg.content, re.DOTALL)
         if not matches:

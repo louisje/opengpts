@@ -6,3 +6,4 @@ nginx/ssl
 /ollama
 /ollama-webui
 redis-volume/
+.venv/

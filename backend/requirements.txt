@@ -7,4 +7,5 @@
 -e packages/langchain/libs/parners/openai
 langserve>=0.0.23,<=0.0.32
 permchain
+langgraph
 python-multipart
