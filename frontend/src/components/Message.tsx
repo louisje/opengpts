@@ -6,6 +6,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { LangSmithActions } from "./LangSmithActions";
+import { DocumentList } from "./Document";
 
 function tryJsonParse(value: string) {
   try {
@@ -34,7 +35,7 @@ function Function(props: {
           {props.name}
         </span>
       )}
-      {!props.call && (
+      {!props.call && props.setOpen && (
         <span
           className={cn(
             "inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 cursor-pointer relative top-1",
@@ -52,7 +53,7 @@ function Function(props: {
         </span>
       )}
       {props.args && (
-        <div className="text-gray-900 mt-2 whitespace-pre-wrap break-words">
+        <div className="text-gray-900 my-2 whitespace-pre-wrap break-words">
           <div className="ring-1 ring-gray-300 rounded">
             <table className="divide-y divide-gray-300">
               <tbody>
@@ -91,24 +92,28 @@ export const Message = memo(function Message(
   props: MessageType & { runId?: string }
 ) {
   const [open, setOpen] = useState(false);
+  const contentIsDocuments =
+    ["function", "tool"].includes(props.type) &&
+    Array.isArray(props.content) &&
+    props.content.every((d) => !!d.page_content);
   return (
     <div className="flex flex-col mb-8">
       <div className="leading-6 flex flex-row">
         <div
           className={cn(
-            "font-medium text-sm text-gray-400 uppercase mr-2 mt-1 w-24 flex flex-col",
+            "font-medium text-sm text-gray-400 uppercase mr-2 mt-1 w-28 flex flex-col",
             props.type === "function" && "mt-2"
           )}
         >
           {props.type}
         </div>
         <div className="flex-1">
-          {props.type === "function" && (
+          {["function", "tool"].includes(props.type) && (
             <Function
               call={false}
-              name={props.name}
+              name={props.name ?? props.additional_kwargs?.name}
               open={open}
-              setOpen={setOpen}
+              setOpen={contentIsDocuments ? undefined : setOpen}
             />
           )}
           {props.additional_kwargs?.function_call && (
@@ -118,7 +123,20 @@ export const Message = memo(function Message(
               args={props.additional_kwargs.function_call.arguments}
             />
           )}
-          {(props.type === "function" ? open : true) ? (
+          {props.additional_kwargs?.tool_calls
+            ?.filter((call) => call.function)
+            ?.map((call) => (
+              <Function
+                call={true}
+                name={call.function?.name}
+                args={call.function?.arguments}
+              />
+            ))}
+          {(
+            ["function", "tool"].includes(props.type) && !contentIsDocuments
+              ? open
+              : true
+          ) ? (
             typeof props.content === "string" ? (
               <div
                 className="text-gray-900 prose"
@@ -126,6 +144,9 @@ export const Message = memo(function Message(
                   __html: DOMPurify.sanitize(marked(props.content)).trim(),
                 }}
               />
+            ) : contentIsDocuments ? (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              <DocumentList documents={props.content as any} />
             ) : (
               <div className="text-gray-900 prose">{str(props.content)}</div>
             )

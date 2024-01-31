@@ -17,7 +17,7 @@ def get_ollama_llm(model):
 
 def get_ffm_llm():
     llm = ChatFFM(
-        model="ffm-llama2-70b-chat",
+        model="ffm-llama2-70b-exp",
         max_new_tokens=1024,
         temperature=0.5,
         top_k=50,

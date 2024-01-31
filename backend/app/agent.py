@@ -12,13 +12,15 @@ from app.agent_types.google_agent import get_google_agent_executor
 from app.agent_types.openai_agent import get_openai_agent_executor
 from app.agent_types.xml_agent import get_xml_agent_executor
 from app.agent_types.ffm_agent import get_ffm_agent_executor
+from app.chatbot import get_chatbot_executor
 from app.agent_types.ollama_agent import get_ollama_agent_executor
 from app.checkpoint import RedisCheckpoint
+from app.retrieval import get_retrieval_executor
 from app.llms import (
     get_anthropic_llm,
     get_google_llm,
-    get_openai_llm,
     get_mixtral_fireworks,
+    get_openai_llm,
     get_ffm_llm,
     get_ollama_llm,
 )
@@ -30,19 +32,15 @@ from app.tools import (
     get_retrieval_tool,
     get_retriever,
 )
-from app.chatbot import get_chatbot_executor
-from app.retrieval import get_retrieval_executor
 
 
 class AgentType(str, Enum):
+    GPT_35_TURBO = "GPT 3.5 Turbo"
+    GPT_4 = "GPT 4"
     CLAUDE2 = "Claude 2"
-    FFM = "ffm-llama2-70b-chat (FFM)"
     GEMINI = "Gemini (Google)"
-    GPT_35_TURBO = "GPT 3.5 Turbo (OpenAI)"
-    GPT_4 = "GPT 4 (OpenAI)"
-    MIXTRAL = "Mixtral"
+    FFM = "ffm-llama2-70b-exp (FFM)"
     OLLAMA = "llama2-7b-chat (Ollama)"
-
 
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
@@ -121,11 +119,11 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
+    GPT_35_TURBO = "GPT 3.5 Turbo"
+    GPT_4 = "GPT 4"
     CLAUDE2 = "Claude 2"
-    FFM = "ffm-llama2-70b-chat (FFM)"
     GEMINI = "Gemini (Google)"
-    GPT_35_TURBO = "GPT 3.5 Turbo (OpenAI)"
-    GPT_4 = "GPT 4 (OpenAI)"
+    FFM = "ffm-llama2-70b-exp (FFM)"
     MIXTRAL = "Mixtral"
     OLLAMA = "llama2-7b-chat (Ollama)"
 
@@ -145,6 +143,10 @@ def get_chatbot(
         llm = get_google_llm()
     elif llm_type == LLMType.MIXTRAL:
         llm = get_mixtral_fireworks()
+    elif llm_type == LLMType.FFM:
+        llm = get_ffm_llm()
+    elif llm_type == LLMType.OLLAMA:
+        llm = get_ollama_llm(model="llama2")
     else:
         raise ValueError("Unexpected llm type")
     return get_chatbot_executor(llm, system_message, checkpointer)
@@ -270,7 +272,7 @@ agent = (
     )
     .configurable_alternatives(
         ConfigurableField(id="type", name="Bot Type"),
-        default_key="assistant",
+        default_key="agent",
         prefix_keys=True,
         chatbot=chatbot,
         chat_retrieval=chat_retrieval,

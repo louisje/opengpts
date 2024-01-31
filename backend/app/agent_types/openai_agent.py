@@ -1,14 +1,15 @@
 import json
 
-from langchain.schema.messages import FunctionMessage
 from langchain.tools import BaseTool
-from langchain.tools.render import format_tool_to_openai_function
+from langchain.tools.render import format_tool_to_openai_tool
 from langchain_core.language_models.base import LanguageModelLike
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.graph import END
 from langgraph.graph.message import MessageGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
+
+from app.message_types import LiberalToolMessage
 
 
 def get_openai_agent_executor(
@@ -18,12 +19,20 @@ def get_openai_agent_executor(
     checkpoint: BaseCheckpointSaver,
 ):
     def _get_messages(messages):
-        return [SystemMessage(content=system_message)] + messages
+        msgs = []
+        for m in messages:
+            if isinstance(m, LiberalToolMessage):
+                _dict = m.dict()
+                _dict["content"] = str(_dict["content"])
+                m_c = ToolMessage(**_dict)
+                msgs.append(m_c)
+            else:
+                msgs.append(m)
+
+        return [SystemMessage(content=system_message)] + msgs
 
     if tools:
-        llm_with_tools = llm.bind(
-            functions=[format_tool_to_openai_function(t) for t in tools]
-        )
+        llm_with_tools = llm.bind(tools=[format_tool_to_openai_tool(t) for t in tools])
     else:
         llm_with_tools = llm
     agent = _get_messages | llm_with_tools
@@ -33,7 +42,7 @@ def get_openai_agent_executor(
     def should_continue(messages):
         last_message = messages[-1]
         # If there is no function call, then we finish
-        if "function_call" not in last_message.additional_kwargs:
+        if "tool_calls" not in last_message.additional_kwargs:
             return "end"
         # Otherwise if there is, we continue
         else:
@@ -41,22 +50,35 @@ def get_openai_agent_executor(
 
     # Define the function to execute tools
     async def call_tool(messages):
+        actions: list[ToolInvocation] = []
         # Based on the continue condition
         # we know the last message involves a function call
         last_message = messages[-1]
-        # We construct an ToolInvocation from the function_call
-        action = ToolInvocation(
-            tool=last_message.additional_kwargs["function_call"]["name"],
-            tool_input=json.loads(
-                last_message.additional_kwargs["function_call"]["arguments"]
-            ),
-        )
+        for tool_call in last_message.additional_kwargs["tool_calls"]:
+            function = tool_call["function"]
+            function_name = function["name"]
+            _tool_input = json.loads(function["arguments"] or "{}")
+            # We construct an ToolInvocation from the function_call
+            actions.append(
+                ToolInvocation(
+                    tool=function_name,
+                    tool_input=_tool_input,
+                )
+            )
         # We call the tool_executor and get back a response
-        response = await tool_executor.ainvoke(action)
-        # We use the response to create a FunctionMessage
-        function_message = FunctionMessage(content=str(response), name=action.tool)
-        # We return a list, because this will get added to the existing list
-        return function_message
+        responses = await tool_executor.abatch(actions)
+        # We use the response to create a ToolMessage
+        tool_messages = [
+            LiberalToolMessage(
+                tool_call_id=tool_call["id"],
+                content=response,
+                additional_kwargs={"name": tool_call["function"]["name"]},
+            )
+            for tool_call, response in zip(
+                last_message.additional_kwargs["tool_calls"], responses
+            )
+        ]
+        return tool_messages
 
     workflow = MessageGraph()
 

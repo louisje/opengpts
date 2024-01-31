@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import orderBy from "lodash/orderBy";
+import { v4 as uuidv4 } from "uuid";
 
 export interface Message {
   type: string;
-  content: string;
+  content:
+    | string
+    | { page_content: string; metadata: Record<string, object> }[]
+    | object;
   name?: string;
   additional_kwargs?: {
+    name?: string;
     function_call?: {
       name?: string;
       arguments?: string;
     };
+    tool_calls?: {
+      function?: {
+        name?: string;
+        arguments?: string;
+      };
+    }[];
   };
   example: boolean;
 }
@@ -68,7 +79,7 @@ export function useChatList(): ChatListProps {
     async (
       name: string,
       assistant_id: string,
-      thread_id: string = crypto.randomUUID()
+      thread_id: string = uuidv4()
     ) => {
       const saved = await fetch(`/threads/${thread_id}`, {
         method: "PUT",
