@@ -1,3 +1,4 @@
+from functools import lru_cache
 import os
 from enum import Enum
 
@@ -43,6 +44,7 @@ def get_retriever(assistant_id: str):
     )
 
 
+@lru_cache(maxsize=5)
 def get_retrieval_tool(assistant_id: str, description: str):
     return create_retriever_tool(
         get_retriever(assistant_id),
@@ -54,16 +56,63 @@ def get_retrieval_tool(assistant_id: str, description: str):
 def _get_google_search():
     return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper())
 
+
+@lru_cache(maxsize=1)
 def _get_duck_duck_go():
     return DuckDuckGoSearchRun(args_schema=DDGInput)
 
 
+@lru_cache(maxsize=1)
+def _get_arxiv():
+    return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(), args_schema=ArxivInput)
+
+
+@lru_cache(maxsize=1)
+def _get_you_search():
+    return create_retriever_tool(
+        YouRetriever(n_hits=3, n_snippets_per_hit=3),
+        "you_search",
+        "Searches for documents using You.com",
+    )
+
+
+@lru_cache(maxsize=1)
+def _get_sec_filings():
+    return create_retriever_tool(
+        KayAiRetriever.create(
+            dataset_id="company", data_types=["10-K", "10-Q"], num_contexts=3
+        ),
+        "sec_filings_search",
+        "Search for a query among SEC Filings",
+    )
+
+
+@lru_cache(maxsize=1)
+def _get_press_releases():
+    return create_retriever_tool(
+        KayAiRetriever.create(
+            dataset_id="company", data_types=["PressRelease"], num_contexts=6
+        ),
+        "press_release_search",
+        "Search for a query among press releases from US companies",
+    )
+
+
+@lru_cache(maxsize=1)
+def _get_pubmed():
+    return create_retriever_tool(
+        PubMedRetriever(), "pub_med_search", "Search for a query on PubMed"
+    )
+
+
+@lru_cache(maxsize=1)
 def _get_wikipedia():
     return create_retriever_tool(
         WikipediaRetriever(), "wikipedia", "Search for a query on Wikipedia"
     )
 
 
+@lru_cache(maxsize=1)
 def _get_tavily():
     tavily_search = TavilySearchAPIWrapper()
     return TavilySearchResults(api_wrapper=tavily_search)
@@ -74,11 +123,13 @@ def _get_open_weather_map():
 def _get_python_repl_tool():
     return PythonREPLTool(args_schema=PythonREPLInput)
 
+@lru_cache(maxsize=1)
 def _get_tavily_answer():
     tavily_search = TavilySearchAPIWrapper()
     return TavilyAnswer(api_wrapper=tavily_search)
 
 
+@lru_cache(maxsize=1)
 def _get_action_server():
     toolkit = ActionServerToolkit(
         url=os.environ.get("ROBOCORP_ACTION_SERVER_URL"),

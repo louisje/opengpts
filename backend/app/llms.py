@@ -1,3 +1,4 @@
+from functools import lru_cache
 import os
 
 import boto3
@@ -29,6 +30,7 @@ def get_ffm_llm():
     )
     return llm
 
+@lru_cache(maxsize=4)
 def get_openai_llm(gpt_4: bool = False, azure: bool = False):
     if not azure:
         if gpt_4:
@@ -47,6 +49,7 @@ def get_openai_llm(gpt_4: bool = False, azure: bool = False):
     return llm
 
 
+@lru_cache(maxsize=2)
 def get_anthropic_llm(bedrock: bool = False):
     if bedrock:
         client = boto3.client(
@@ -61,11 +64,13 @@ def get_anthropic_llm(bedrock: bool = False):
     return model
 
 
+@lru_cache(maxsize=1)
 def get_google_llm():
     return ChatVertexAI(
         model_name="gemini-pro", convert_system_message_to_human=True, streaming=True
     )
 
 
+@lru_cache(maxsize=1)
 def get_mixtral_fireworks():
     return ChatFireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")

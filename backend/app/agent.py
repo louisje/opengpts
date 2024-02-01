@@ -45,31 +45,32 @@ class AgentType(str, Enum):
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
 
+CHECKPOINTER = RedisCheckpoint()
+
 
 def get_agent_executor(
     tools: list,
     agent: AgentType,
     system_message: str,
 ):
-    checkpointer = RedisCheckpoint()
     if agent == AgentType.GPT_35_TURBO:
         llm = get_openai_llm()
-        return get_openai_agent_executor(tools, llm, system_message, checkpointer)
+        return get_openai_agent_executor(tools, llm, system_message, CHECKPOINTER)
     elif agent == AgentType.GPT_4:
         llm = get_openai_llm(gpt_4=True)
-        return get_openai_agent_executor(tools, llm, system_message, checkpointer)
+        return get_openai_agent_executor(tools, llm, system_message, CHECKPOINTER)
     elif agent == AgentType.CLAUDE2:
         llm = get_anthropic_llm()
-        return get_xml_agent_executor(tools, llm, system_message, checkpointer)
+        return get_xml_agent_executor(tools, llm, system_message, CHECKPOINTER)
     elif agent == AgentType.GEMINI:
         llm = get_google_llm()
-        return get_google_agent_executor(tools, llm, system_message, checkpointer)
+        return get_google_agent_executor(tools, llm, system_message, CHECKPOINTER)
     elif agent == AgentType.FFM:
         llm = get_ffm_llm()
-        return get_ffm_agent_executor(tools, llm, system_message, checkpointer)
+        return get_ffm_agent_executor(tools, llm, system_message, CHECKPOINTER)
     elif agent == AgentType.OLLAMA:
         llm = get_ollama_llm(model="llama2")
-        return get_ollama_agent_executor(tools, llm, system_message, checkpointer)
+        return get_ollama_agent_executor(tools, llm, system_message, CHECKPOINTER)
     else:
         raise ValueError("Unexpected agent type")
 
@@ -136,7 +137,6 @@ def get_chatbot(
     llm_type: LLMType,
     system_message: str,
 ):
-    checkpointer = RedisCheckpoint()
     if llm_type == LLMType.GPT_35_TURBO:
         llm = get_openai_llm()
     elif llm_type == LLMType.GPT_4:
@@ -153,7 +153,7 @@ def get_chatbot(
         llm = get_ollama_llm(model="llama2")
     else:
         raise ValueError(f"Unexpected llm type {llm_type}")
-    return get_chatbot_executor(llm, system_message, checkpointer)
+    return get_chatbot_executor(llm, system_message, CHECKPOINTER)
 
 
 class ConfigurableChatBot(RunnableBinding):
@@ -183,7 +183,7 @@ class ConfigurableChatBot(RunnableBinding):
 
 
 chatbot = (
-    ConfigurableChatBot(llm=LLMType.GPT_35_TURBO, checkpoint=RedisCheckpoint())
+    ConfigurableChatBot(llm=LLMType.GPT_35_TURBO, checkpoint=CHECKPOINTER)
     .configurable_fields(
         llm=ConfigurableField(id="llm_type", name="LLM Type"),
         system_message=ConfigurableField(id="system_message", name="Instructions"),
@@ -210,7 +210,6 @@ class ConfigurableRetrieval(RunnableBinding):
     ) -> None:
         others.pop("bound", None)
         retriever = get_retriever(assistant_id)
-        checkpointer = RedisCheckpoint()
         if llm_type == LLMType.GPT_35_TURBO:
             llm = get_openai_llm()
         elif llm_type == LLMType.GPT_4:
@@ -227,7 +226,7 @@ class ConfigurableRetrieval(RunnableBinding):
             llm = get_ollama_llm(model="llama2")
         else:
             raise ValueError("Unexpected llm type")
-        chatbot = get_retrieval_executor(llm, retriever, system_message, checkpointer)
+        chatbot = get_retrieval_executor(llm, retriever, system_message, CHECKPOINTER)
         super().__init__(
             llm_type=llm_type,
             system_message=system_message,
@@ -238,7 +237,7 @@ class ConfigurableRetrieval(RunnableBinding):
 
 
 chat_retrieval = (
-    ConfigurableRetrieval(llm_type=LLMType.GPT_35_TURBO, checkpoint=RedisCheckpoint())
+    ConfigurableRetrieval(llm_type=LLMType.GPT_35_TURBO, checkpoint=CHECKPOINTER)
     .configurable_fields(
         llm_type=ConfigurableField(id="llm_type", name="LLM Type"),
         system_message=ConfigurableField(id="system_message", name="Instructions"),
