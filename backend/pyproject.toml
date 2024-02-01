@@ -42,6 +42,8 @@ wikipedia = "^1.4.0"
 langchain-google-vertexai = "^0.0.3"
 setuptools = "^69.0.3"
 pdfminer-six = "^20231228"
+langchain-robocorp = "^0.0.3"
+fireworks-ai = "^0.11.2"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

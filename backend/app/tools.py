@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 
 from langchain.pydantic_v1 import BaseModel, Field
@@ -16,6 +17,7 @@ from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 from langchain_community.vectorstores.redis import RedisFilter
+from langchain_robocorp import ActionServerToolkit
 
 from langchain_experimental.tools import PythonREPLTool
 
@@ -77,32 +79,39 @@ def _get_tavily_answer():
     return TavilyAnswer(api_wrapper=tavily_search)
 
 
-def _get_ntd_currency_converter():
-    return Tool.from_function(
-        func=lambda x: x * 30,
-        name="ntd_currency_converter",
-        description=("Convert currency from USD to NTD. (dollar)\nOnly integer number input is allowd."),
+def _get_action_server():
+    toolkit = ActionServerToolkit(
+        url=os.environ.get("ROBOCORP_ACTION_SERVER_URL"),
+        api_key=os.environ.get("ROBOCORP_ACTION_SERVER_KEY"),
     )
+    tools = toolkit.get_tools()
+    return tools
 
 
 class AvailableTools(str, Enum):
-#   DDG_SEARCH = "DDG Search"
-#   TAVILY = "Search (Tavily)"
-#   TAVILY_ANSWER = "Search (short answer, Tavily)"
+    ACTION_SERVER = "Action Server by Robocorp"
+    DDG_SEARCH = "DDG Search"
+    TAVILY = "Search (Tavily)"
+    TAVILY_ANSWER = "Search (short answer, Tavily)"
     RETRIEVAL = "Retrieval"
     WIKIPEDIA = "Wikipedia"
-#   NTD_CURRENCY_CONVERTER = "NTD Currency Converter"
     OPEN_WEATHER_MAP = "Open Weather Map"
     PYTHON_REPL_TOOL = "Python REPL Tool"
     GOOGLE_SEARCH = "Google Search"
 
 
 TOOLS = {
-#   AvailableTools.DDG_SEARCH: _get_duck_duck_go,
+    AvailableTools.ACTION_SERVER: _get_action_server,
+    AvailableTools.DDG_SEARCH: _get_duck_duck_go,
+    AvailableTools.ARXIV: _get_arxiv,
+    AvailableTools.YOU_SEARCH: _get_you_search,
+    AvailableTools.SEC_FILINGS: _get_sec_filings,
+    AvailableTools.PRESS_RELEASES: _get_press_releases,
+    AvailableTools.PUBMED: _get_pubmed,
+    AvailableTools.TAVILY: _get_tavily,
     AvailableTools.WIKIPEDIA: _get_wikipedia,
-#   AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
-#   AvailableTools.TAVILY: _get_tavily,
-#   AvailableTools.NTD_CURRENCY_CONVERTER: _get_ntd_currency_converter,
+    AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
+    AvailableTools.TAVILY: _get_tavily,
     AvailableTools.OPEN_WEATHER_MAP: _get_open_weather_map,
     AvailableTools.PYTHON_REPL_TOOL: _get_python_repl_tool,
     AvailableTools.GOOGLE_SEARCH: _get_google_search,

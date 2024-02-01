@@ -143,6 +143,8 @@ const TOOL_DESCRIPTIONS = {
   "Open Weather Map": "API quering weather.",
   "Python REPL Tool": "Python script interpreter.",
   Retrieval: "Look up information in uploaded files.",
+  "Action Server by Robocorp":
+    "Run AI actions with [Robocorp Action Server](https://github.com/robocorp/robocorp).",
   "DDG Search":
     "Search the web with [DuckDuckGo](https://pypi.org/project/duckduckgo-search/).",
   "Search (Tavily)":
