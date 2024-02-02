@@ -8,9 +8,11 @@ from langchain_core.agents import AgentAction
 
 from langchain_core.language_models.base import LanguageModelLike
 from langchain_core.messages.function import FunctionMessage
+from langchain_core.messages.system import SystemMessage
+from langchain_core.prompts.chat import SystemMessagePromptTemplate
 from langchain_core.tools import BaseTool
 
-from .prompts import conversational_prompt
+from .prompt_template import template
 from .output_parser import parse_output
 
 from langgraph.checkpoint import BaseCheckpointSaver
@@ -18,26 +20,37 @@ from langgraph.prebuilt import ToolExecutor, ToolInvocation
 from langgraph.graph.message import MessageGraph
 from langgraph.graph import END
 
+from app.message_types import LiberalFunctionMessage
+
 def get_ollama_agent_executor(
     tools: list[BaseTool],
     llm: LanguageModelLike,
     system_message: str,
     checkpoint: BaseCheckpointSaver
 ):
-    if tools:
-        prompt = conversational_prompt.partial(
-            tools=render_text_description(tools),
-            tool_names=", ".join([t.name for t in tools]),
-            system_message=system_message,
-        )
-    else:
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", system_message),
-                MessagesPlaceholder(variable_name="messages"),
-            ]
-        )
-    agent = prompt | llm
+    def _get_messages(messages):
+        msgs = []
+        prompt = None
+        for m in messages:
+            if isinstance(m, LiberalFunctionMessage):
+                _dict = m.dict()
+                _dict["content"] = str(_dict["content"])
+                m_c = FunctionMessage(**_dict)
+                msgs.append(m_c)
+            else:
+                msgs.append(m)
+        if tools:
+            parcial_variables = {
+                "tools": render_text_description(tools),
+                "tool_names": ", ".join([t.name for t in tools]),
+                "system_message": system_message,
+            }
+            prompt = SystemMessagePromptTemplate.from_template(template=template,partial_variables=parcial_variables)
+            return [prompt.format()] + msgs
+
+        return [SystemMessage(content=system_message)] + msgs
+
+    agent = _get_messages | llm
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):

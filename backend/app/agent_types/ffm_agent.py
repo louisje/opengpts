@@ -5,6 +5,8 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models.base import LanguageModelLike
+from langchain_core.messages.system import SystemMessage
+from langchain_core.prompts.chat import SystemMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from langchain_core.messages.function import FunctionMessage
 
@@ -13,7 +15,9 @@ from langgraph.graph.message import MessageGraph
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.graph import END
 
-from .prompts import conversational_prompt
+from app.message_types import LiberalFunctionMessage
+
+from .prompt_template import template
 from .output_parser import parse_output
 
 def get_ffm_agent_executor(
@@ -22,20 +26,29 @@ def get_ffm_agent_executor(
     system_message: str,
     checkpoint: BaseCheckpointSaver
 ):
-    if tools:
-        prompt = conversational_prompt.partial(
-            tools=render_text_description(tools),
-            tool_names=", ".join([t.name for t in tools]),
-            system_message=system_message,
-        )
-    else:
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", system_message),
-                MessagesPlaceholder(variable_name="messages"),
-            ]
-        )
-    agent = prompt | llm
+    def _get_messages(messages):
+        msgs = []
+        prompt = None
+        for m in messages:
+            if isinstance(m, LiberalFunctionMessage):
+                _dict = m.dict()
+                _dict["content"] = str(_dict["content"])
+                m_c = FunctionMessage(**_dict)
+                msgs.append(m_c)
+            else:
+                msgs.append(m)
+        if tools:
+            parcial_variables = {
+                "tools": render_text_description(tools),
+                "tool_names": ", ".join([t.name for t in tools]),
+                "system_message": system_message,
+            }
+            prompt = SystemMessagePromptTemplate.from_template(template=template,partial_variables=parcial_variables)
+            return [prompt.format()] + msgs
+
+        return [SystemMessage(content=system_message)] + msgs
+
+    agent = _get_messages | llm
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):
@@ -52,7 +65,7 @@ def get_ffm_agent_executor(
         last_message = messages[-1]
         # We construct an ToolInvocation from the function_call
         _action = parse_output(last_message)
-        if not action or not isinstance(action, AgentAction):
+        if not _action or not isinstance(_action, AgentAction):
             raise ValueError("Invalid action type")
         # We call the tool_executor and get back a response
         action = ToolInvocation(

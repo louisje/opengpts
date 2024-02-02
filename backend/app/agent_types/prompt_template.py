@@ -1,4 +1,3 @@
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 template = """
 角色說明
@@ -25,11 +24,3 @@ template = """
   "action_input": string \\ 要輸入給工具的內容
 }}
 ```"""
-
-conversational_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", template),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-)
-

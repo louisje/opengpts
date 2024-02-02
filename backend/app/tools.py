@@ -11,14 +11,16 @@ from langchain_community.retrievers import (
     PubMedRetriever,
     WikipediaRetriever,
 )
-from langchain_community.tools import ArxivQueryRun, DuckDuckGoSearchRun, GoogleSearchResults, OpenWeatherMapQueryRun, DuckDuckGoSearchRun
 from langchain_community.retrievers.you import YouRetriever
+from langchain_community.tools.google_search import GoogleSearchResults
+from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
+from langchain_community.tools.arxiv.tool import ArxivQueryRun
+from langchain_community.tools.openweathermap import OpenWeatherMapQueryRun
 from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 from langchain_community.vectorstores.redis import RedisFilter
-from langchain_robocorp import ActionServerToolkit
 
 from langchain_experimental.tools import PythonREPLTool
 
@@ -29,8 +31,15 @@ class DDGInput(BaseModel):
     query: str = Field(description="search query to look up")
 
 
+class ArxivInput(BaseModel):
+    query: str = Field(description="search query to look up")
+
+
 class PythonREPLInput(BaseModel):
     query: str = Field(description="python command to run")
+
+class GoogleSearchInput(BaseModel):
+    query: str = Field(description="search query to look up")
 
 
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
@@ -53,8 +62,9 @@ def get_retrieval_tool(assistant_id: str, description: str):
     )
 
 
+@lru_cache(maxsize=1)
 def _get_google_search():
-    return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper())
+    return GoogleSearchResults(args_schema=GoogleSearchInput, api_wrapper=GoogleSearchAPIWrapper())
 
 
 @lru_cache(maxsize=1)
@@ -129,22 +139,12 @@ def _get_tavily_answer():
     return TavilyAnswer(api_wrapper=tavily_search)
 
 
-@lru_cache(maxsize=1)
-def _get_action_server():
-    toolkit = ActionServerToolkit(
-        url=os.environ.get("ROBOCORP_ACTION_SERVER_URL"),
-        api_key=os.environ.get("ROBOCORP_ACTION_SERVER_KEY"),
-    )
-    tools = toolkit.get_tools()
-    return tools
-
-
 class AvailableTools(str, Enum):
-    ACTION_SERVER = "Action Server by Robocorp"
     DDG_SEARCH = "DDG Search"
     TAVILY = "Search (Tavily)"
     TAVILY_ANSWER = "Search (short answer, Tavily)"
     RETRIEVAL = "Retrieval"
+    ARXIV = "Arxiv"
     WIKIPEDIA = "Wikipedia"
     OPEN_WEATHER_MAP = "Open Weather Map"
     PYTHON_REPL_TOOL = "Python REPL Tool"
@@ -152,13 +152,8 @@ class AvailableTools(str, Enum):
 
 
 TOOLS = {
-    AvailableTools.ACTION_SERVER: _get_action_server,
     AvailableTools.DDG_SEARCH: _get_duck_duck_go,
     AvailableTools.ARXIV: _get_arxiv,
-    AvailableTools.YOU_SEARCH: _get_you_search,
-    AvailableTools.SEC_FILINGS: _get_sec_filings,
-    AvailableTools.PRESS_RELEASES: _get_press_releases,
-    AvailableTools.PUBMED: _get_pubmed,
     AvailableTools.TAVILY: _get_tavily,
     AvailableTools.WIKIPEDIA: _get_wikipedia,
     AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
