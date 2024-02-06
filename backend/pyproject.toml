@@ -39,7 +39,7 @@ arxiv = "^2.1.0"
 kay = "^0.1.2"
 xmltodict = "^0.13.0"
 wikipedia = "^1.4.0"
-langchain-google-vertexai = "^0.0.3"
+langchain-google-vertexai = {path = "packages/langchain/libs/partners/google-vertexai", develop = true}
 setuptools = "^69.0.3"
 pdfminer-six = "^20231228"
 langchain-robocorp = "^0.0.3"

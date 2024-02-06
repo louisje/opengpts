@@ -1,8 +1,9 @@
--e packages/langchain/libs/core
--e packages/langchain/libs/cli
--e packages/langchain/libs/langchain
--e packages/langchain/libs/experimental
--e packages/langchain/libs/parners/openai
+# -e ./packages/langchain/libs/core
+# -e ./packages/langchain/libs/cli
+# -e ./packages/langchain/libs/langchain
+-e ./packages/langchain/libs/experimental
+-e ./packages/langchain/libs/partners/openai
+-e ./packages/langchain/libs/partners/google-vertexai
 langserve>=0.0.23,<=0.0.32
 permchain
 langgraph

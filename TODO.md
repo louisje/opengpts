@@ -6,3 +6,4 @@
 * [ ] MistralAI
 * [ ] Image uploading
 * [ ] ChatGLM-6B
+* [ ] OllamaFunctions
