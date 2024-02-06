@@ -1,5 +1,5 @@
 *.env
-.env.gcp.yaml
+.env.*
 .env
 .vscode
 nginx/ssl
