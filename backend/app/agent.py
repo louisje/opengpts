@@ -7,6 +7,7 @@ from langchain_core.runnables import (
     ConfigurableFieldMultiOption,
     RunnableBinding,
 )
+from langgraph.checkpoint import CheckpointAt
 
 from app.agent_types.google_agent import get_google_agent_executor
 from app.agent_types.openai_agent import get_openai_agent_executor
@@ -45,32 +46,45 @@ class AgentType(str, Enum):
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
 
-CHECKPOINTER = RedisCheckpoint()
+CHECKPOINTER = RedisCheckpoint(at=CheckpointAt.END_OF_STEP)
 
 
 def get_agent_executor(
     tools: list,
     agent: AgentType,
     system_message: str,
+    interrupt_before_action: bool,
 ):
     if agent == AgentType.GPT_35_TURBO:
         llm = get_openai_llm()
-        return get_openai_agent_executor(tools, llm, system_message, CHECKPOINTER)
+        return get_openai_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     elif agent == AgentType.GPT_4:
         llm = get_openai_llm(gpt_4=True)
-        return get_openai_agent_executor(tools, llm, system_message, CHECKPOINTER)
+        return get_openai_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     elif agent == AgentType.CLAUDE2:
         llm = get_anthropic_llm()
-        return get_xml_agent_executor(tools, llm, system_message, CHECKPOINTER)
+        return get_xml_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     elif agent == AgentType.GEMINI:
         llm = get_google_llm()
-        return get_google_agent_executor(tools, llm, system_message, CHECKPOINTER)
+        return get_google_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     elif agent == AgentType.FFM:
         llm = get_ffm_llm()
-        return get_ffm_agent_executor(tools, llm, system_message, CHECKPOINTER)
+        return get_google_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     elif agent == AgentType.OLLAMA:
         llm = get_ollama_llm(model="llama2")
-        return get_ollama_agent_executor(tools, llm, system_message, CHECKPOINTER)
+        return get_google_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     else:
         raise ValueError("Unexpected agent type")
 
@@ -80,6 +94,7 @@ class ConfigurableAgent(RunnableBinding):
     agent: AgentType
     system_message: str = DEFAULT_SYSTEM_MESSAGE
     retrieval_description: str = RETRIEVAL_DESCRIPTION
+    interrupt_before_action: bool = False
     assistant_id: Optional[str] = None
     user_id: Optional[str] = None
 
@@ -91,6 +106,7 @@ class ConfigurableAgent(RunnableBinding):
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: Optional[str] = None,
         retrieval_description: str = RETRIEVAL_DESCRIPTION,
+        interrupt_before_action: bool = False,
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[Mapping[str, Any]] = None,
         **others: Any,
@@ -110,7 +126,9 @@ class ConfigurableAgent(RunnableBinding):
                     _tools.extend(_returned_tools)
                 else:
                     _tools.append(_returned_tools)
-        _agent = get_agent_executor(_tools, agent, system_message)
+        _agent = get_agent_executor(
+            _tools, agent, system_message, interrupt_before_action
+        )
         agent_executor = _agent.with_config({"recursion_limit": 50})
         super().__init__(
             tools=tools,
@@ -260,6 +278,11 @@ agent = (
     .configurable_fields(
         agent=ConfigurableField(id="agent_type", name="Agent Type"),
         system_message=ConfigurableField(id="system_message", name="Instructions"),
+        interrupt_before_action=ConfigurableField(
+            id="interrupt_before_action",
+            name="Tool Confirmation",
+            description="If Yes, you'll be prompted to continue before each tool is executed.\nIf No, tools will be executed automatically by the agent.",
+        ),
         assistant_id=ConfigurableField(
             id="assistant_id", name="Assistant ID", is_shared=True
         ),

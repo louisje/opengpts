@@ -28,7 +28,7 @@ permchain = ">=0.0.8"
 pyowm = "^3.3.0"
 google-api-python-client = "^2.115.0"
 langchain = {path = "packages/langchain/libs/langchain", develop = true}
-langgraph = "^0.0.21"
+langgraph = "^0.0.23"
 pydantic = "<2.0"
 python-magic = "^0.4.27"
 langchain-openai = {path = "packages/langchain/libs/partners/openai", develop = true}
@@ -44,6 +44,7 @@ setuptools = "^69.0.3"
 pdfminer-six = "^20231228"
 langchain-robocorp = "^0.0.3"
 fireworks-ai = "^0.11.2"
+anthropic = "^0.13.0"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

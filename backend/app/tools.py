@@ -1,11 +1,10 @@
-from functools import lru_cache
 import os
 from enum import Enum
+from functools import lru_cache
 
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
-from langchain.tools import Tool
-
+from langchain_community.agent_toolkits.connery import ConneryToolkit
 from langchain_community.retrievers import (
     KayAiRetriever,
     PubMedRetriever,
@@ -16,6 +15,7 @@ from langchain_community.tools.google_search import GoogleSearchResults
 from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
 from langchain_community.tools.openweathermap import OpenWeatherMapQueryRun
+from langchain_community.tools.connery import ConneryService
 from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
@@ -137,6 +137,27 @@ def _get_python_repl_tool():
 def _get_tavily_answer():
     tavily_search = TavilySearchAPIWrapper()
     return TavilyAnswer(api_wrapper=tavily_search)
+
+
+@lru_cache(maxsize=1)
+def _get_action_server():
+    toolkit = ActionServerToolkit(
+        url=os.environ.get("ROBOCORP_ACTION_SERVER_URL"),
+        api_key=os.environ.get("ROBOCORP_ACTION_SERVER_KEY"),
+    )
+    tools = toolkit.get_tools()
+    return tools
+
+
+@lru_cache(maxsize=1)
+def _get_connery_actions():
+    connery_service = ConneryService(
+        runner_url=os.environ.get("CONNERY_RUNNER_URL"),
+        api_key=os.environ.get("CONNERY_RUNNER_API_KEY"),
+    )
+    connery_toolkit = ConneryToolkit.create_instance(connery_service)
+    tools = connery_toolkit.get_tools()
+    return tools
 
 
 class AvailableTools(str, Enum):

@@ -292,6 +292,17 @@ ROBOCORP_ACTION_SERVER_URL=https://dummy-action-server.robocorp.link
 ROBOCORP_ACTION_SERVER_KEY=dummy-api-key
 ```
 
+**_Connery Actions_**
+
+Connect OpenGPTs to the real world with [Connery](https://github.com/connery-io/connery).
+
+Requires setting an environment variable, which you get during the [Connery Runner setup](https://docs.connery.io/docs/runner/quick-start/):
+
+```shell
+CONNERY_RUNNER_URL=https://your-personal-connery-runner-url
+CONNERY_RUNNER_API_KEY=...
+```
+
 **DuckDuckGo Search**
 
 Search the web with [DuckDuckGo](https://pypi.org/project/duckduckgo-search/). Does not require any API keys.
@@ -366,6 +377,8 @@ Searches [Wikipedia](https://pypi.org/project/wikipedia/). Does not require any 
 
 ## Deployment
 
+### Deploy via Cloud Run
+
 **1. Build the frontend**
 
 ```shell
@@ -383,3 +396,7 @@ First create a `.env.gcp.yaml` file with the contents from `.env.gcp.yaml.exampl
 ```shell
 gcloud run deploy opengpts --source . --port 8000 --env-vars-file .env.gcp.yaml --allow-unauthenticated --region us-central1 --min-instances 1
 ```
+
+### Deploy in Kubernetes
+
+We have a Helm chart for deploying the backend to Kubernetes. You can find more information here: [README.md](https://github.com/langchain-ai/helm/tree/main/charts/open-gpts)
