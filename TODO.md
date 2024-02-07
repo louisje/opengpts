@@ -7,3 +7,4 @@
 * [ ] Image uploading
 * [ ] ChatGLM-6B
 * [ ] OllamaFunctions
+* [ ] Huggingface Chat Assistant
