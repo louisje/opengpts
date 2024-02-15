@@ -5,5 +5,5 @@
 * [ ] ChatGLM-6B
 * [ ] OllamaFunctions
 * [ ] QwenLM
-* [ ] HuggingFace Assistant
 * [ ] LangGraph/CRAG
+* [ ] Huggingface Chat Assistant
