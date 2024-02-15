@@ -9,6 +9,7 @@ WORKDIR /backend
 
 COPY . .
 
+RUN mv google_cloud_application_credentials.json /root/.google_cloud_application_credentials.json
 RUN rm poetry.lock
 
 RUN pip install .

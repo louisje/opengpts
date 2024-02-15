@@ -4,3 +4,4 @@ __pycache__/
 *.swp
 ui
 packages/langchain
+google_cloud_application_credentials.json

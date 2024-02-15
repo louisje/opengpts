@@ -2,7 +2,8 @@ import os
 from functools import lru_cache
 import httpx
 import boto3
-from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatFFM, ChatOllama
+from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatOllama
+from langchain_community.chat_models.ffm import ChatFFM
 from langchain_google_vertexai import ChatVertexAI
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
@@ -27,12 +28,13 @@ def get_ffm_llm():
         ffm_api_key=os.environ["FFM_API_KEY"],
         base_url=os.environ["FFM_BASE_URL"],
         streaming=True,
+        stop=None,
     )
     return llm
 
 @lru_cache(maxsize=4)
 def get_openai_llm(gpt_4: bool = False, azure: bool = False):
-    proxy_url = os.environ["PROXY_URL"]
+    proxy_url = os.environ.get("PROXY_URL")
     if proxy_url is not None or proxy_url != "":
         http_client = httpx.AsyncClient(proxies=proxy_url)
     else:
@@ -46,10 +48,10 @@ def get_openai_llm(gpt_4: bool = False, azure: bool = False):
         llm = AzureChatOpenAI(
             http_client=http_client,
             temperature=0,
-            deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-            openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
-            openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-            openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+            base_url=os.environ["AZURE_OPENAI_API_BASE"],
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+            api_key=os.environ["AZURE_OPENAI_API_KEY"], # type: ignore
             streaming=True,
         )
     return llm
@@ -66,13 +68,13 @@ def get_anthropic_llm(bedrock: bool = False):
         )
         model = BedrockChat(model_id="anthropic.claude-v2", client=client)
     else:
-        model = ChatAnthropic(temperature=0, max_tokens_to_sample=2000)
+        model = ChatAnthropic(temperature=0, max_tokens=2000)
     return model
 
 
 @lru_cache(maxsize=1)
 def get_google_llm():
-    return ChatVertexAI(model_name="gemini-pro", convert_system_message_to_human=True, streaming=True)
+    return ChatVertexAI(project=os.environ["GOOGLE_CLOUD_PROJECT_ID"], model_name="gemini-pro", convert_system_message_to_human=True, streaming=True)
 
 
 @lru_cache(maxsize=1)

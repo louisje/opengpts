@@ -140,16 +140,6 @@ def _get_tavily_answer():
 
 
 @lru_cache(maxsize=1)
-def _get_action_server():
-    toolkit = ActionServerToolkit(
-        url=os.environ.get("ROBOCORP_ACTION_SERVER_URL"),
-        api_key=os.environ.get("ROBOCORP_ACTION_SERVER_KEY"),
-    )
-    tools = toolkit.get_tools()
-    return tools
-
-
-@lru_cache(maxsize=1)
 def _get_connery_actions():
     connery_service = ConneryService(
         runner_url=os.environ.get("CONNERY_RUNNER_URL"),
@@ -161,6 +151,7 @@ def _get_connery_actions():
 
 
 class AvailableTools(str, Enum):
+    CONNERY = '"AI Action Runner" by Connery'
     DDG_SEARCH = "DDG Search"
     TAVILY = "Search (Tavily)"
     TAVILY_ANSWER = "Search (short answer, Tavily)"
