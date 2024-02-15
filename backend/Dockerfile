@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y libmagic1 && rm -rf /var/lib/apt/lists/
 WORKDIR /backend
 
 COPY . .
-RUN mv .google_application_credentials.json /root
 
 RUN rm poetry.lock
 
