@@ -1,12 +1,13 @@
-# -e ./packages/langchain/libs/core
-# -e ./packages/langchain/libs/cli
-# -e ./packages/langchain/libs/langchain
+-e ./packages/langchain/libs/core
+-e ./packages/langchain/libs/cli
+-e ./packages/langchain/libs/langchain
 -e ./packages/langchain/libs/experimental
 -e ./packages/langchain/libs/partners/openai
 -e ./packages/langchain/libs/partners/google-vertexai
-langserve>=0.0.23,<=0.0.32
+langchain>=0.1.0
+langserve>=0.0.23
 permchain
+httpx[socks]
 langgraph
 python-multipart
 langchain-robocorp>=0.0.1
-

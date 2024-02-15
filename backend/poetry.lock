@@ -1710,11 +1710,11 @@ files = []
 develop = true
 
 [package.dependencies]
-aiohttp = "^3.8.3"
-dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = {path = "../core", develop = true}
+aiohttp = ">=3.8.3,<4.0.0"
+dataclasses-json = ">=0.5.7,<0.7"
+langchain-core = ">=0.1.16,<0.2"
 langsmith = ">=0.0.83,<0.1"
-numpy = "^1"
+numpy = ">=1,<2"
 PyYAML = ">=5.3"
 requests = "^2"
 SQLAlchemy = ">=1.4,<3"
@@ -1730,7 +1730,7 @@ url = "packages/langchain/libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.1.18"
+version = "0.1.20"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1739,9 +1739,9 @@ develop = true
 
 [package.dependencies]
 anyio = ">=3,<5"
-jsonpatch = "^1.33"
-langsmith = ">=0.0.83,<0.1"
-packaging = "^23.2"
+jsonpatch = ">=1.33,<2.0"
+langsmith = ">=0.0.87,<0.0.88"
+packaging = ">=23.2,<24.0"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
 requests = "^2"
@@ -1871,13 +1871,13 @@ server = ["fastapi (>=0.90.1,<1)", "sse-starlette (>=1.3.0,<2.0.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.92"
+version = "0.0.87"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "langsmith-0.0.92-py3-none-any.whl", hash = "sha256:ddcf65e3b5ca11893ae8ef9816ce2a11a089d051be491886e43a2c4556b88fd0"},
-    {file = "langsmith-0.0.92.tar.gz", hash = "sha256:61a3a502222bdd221b7f592b6fc14756d74c4fc088aa6bd8834b92adfe9ee583"},
+    {file = "langsmith-0.0.87-py3-none-any.whl", hash = "sha256:8903d3811b9fc89eb18f5961c8e6935fbd2d0f119884fbf30dc70b8f8f4121fc"},
+    {file = "langsmith-0.0.87.tar.gz", hash = "sha256:36c4cc47e5b54be57d038036a30fb19ce6e4c73048cd7a464b8f25b459694d34"},
 ]
 
 [package.dependencies]
