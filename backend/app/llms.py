@@ -5,6 +5,7 @@ import boto3
 from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
 from langchain_google_vertexai import ChatVertexAI
+from langchain_google_vertexai._enums import HarmBlockThreshold, HarmCategory
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 def get_ollama_llm(model):
@@ -84,7 +85,18 @@ def get_anthropic_llm(bedrock: bool = False):
 
 @lru_cache(maxsize=1)
 def get_google_llm():
-    return ChatVertexAI(project=os.environ["GOOGLE_CLOUD_PROJECT_ID"], model_name="gemini-pro", convert_system_message_to_human=True, streaming=True)
+    return ChatVertexAI(
+        project=os.environ["GOOGLE_CLOUD_PROJECT_ID"],
+        model_name="gemini-pro",
+        convert_system_message_to_human=True,
+        streaming=True,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        },
+    )
 
 
 @lru_cache(maxsize=1)
