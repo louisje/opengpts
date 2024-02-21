@@ -22,14 +22,14 @@ langchain-experimental = {path = "packages/langchain/libs/experimental", develop
 # langchain = { git = "git@github.com:langchain-ai/langchain.git/", branch = "nc/subclass-runnable-binding" , subdirectory = "libs/langchain"}
 orjson = "^3.9.10"
 redis = "^5.0.1"
-python-multipart = "^0.0.6"
-tiktoken = "^0.5.1"
+python-multipart = "^0.0.9"
+tiktoken = "^0.6.0"
 permchain = ">=0.0.8"
 pyowm = "^3.3.0"
 google-api-python-client = "^2.115.0"
 langchain = {path = "packages/langchain/libs/langchain", develop = true}
 langgraph = "^0.0.23"
-pydantic = "<2.0"
+pydantic = ">=2.6.1"
 python-magic = "^0.4.27"
 langchain-openai = {path = "packages/langchain/libs/partners/openai", develop = true}
 beautifulsoup4 = "^4.12.3"
@@ -42,10 +42,10 @@ wikipedia = "^1.4.0"
 langchain-google-vertexai = {path = "packages/langchain/libs/partners/google-vertexai", develop = true}
 setuptools = "^69.0.3"
 pdfminer-six = "^20231228"
-langchain-robocorp = "^0.0.3"
+langchain-robocorp = {path = "packages/langchain/libs/partners/robocorp", develop = true}
 fireworks-ai = "^0.11.2"
-anthropic = "^0.13.0"
-httpx = { version = "0.25.2", extras = ["socks"] }
+anthropic = "^0.16.0"
+httpx = { version = "0.26.0", extras = ["socks"] }
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

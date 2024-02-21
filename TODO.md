@@ -1,9 +1,8 @@
 * [X] ollama/webui
 * [X] Retrival
-* [ ] Gemini/PaLM
-* [X] llama2-7b-taiwan
+* [X] Gemini
 * [ ] ChatGLM-6B
 * [ ] OllamaFunctions
 * [ ] QwenLM
 * [ ] LangGraph/CRAG
-* [ ] Huggingface Chat Assistant
+* [X] Huggingface Chat Assistant

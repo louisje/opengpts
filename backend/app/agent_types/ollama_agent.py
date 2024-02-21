@@ -26,6 +26,7 @@ def get_ollama_agent_executor(
     tools: list[BaseTool],
     llm: LanguageModelLike,
     system_message: str,
+    interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver
 ):
     def _get_messages(messages):
@@ -67,7 +68,7 @@ def get_ollama_agent_executor(
         last_message = messages[-1]
         # We construct an ToolInvocation from the function_call
         _action = parse_output(last_message)
-        if not action or not isinstance(action, AgentAction):
+        if not _action or not isinstance(_action, AgentAction):
             raise ValueError("Invalid action type")
         # We call the tool_executor and get back a response
         action = ToolInvocation(
@@ -119,4 +120,6 @@ def get_ollama_agent_executor(
     # This compiles it into a LangChain Runnable,
     # meaning you can use it as you would any other runnable
     app = workflow.compile(checkpointer=checkpoint)
+    if interrupt_before_action:
+        app.interrupt = ["action:inbox"]
     return app

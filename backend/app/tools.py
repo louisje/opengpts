@@ -25,6 +25,7 @@ from langchain_community.vectorstores.redis import RedisFilter
 from langchain_experimental.tools import PythonREPLTool
 
 from app.upload import vstore
+from pydantic.v1 import SecretStr
 
 
 class DDGInput(BaseModel):
@@ -64,7 +65,7 @@ def get_retrieval_tool(assistant_id: str, description: str):
 
 @lru_cache(maxsize=1)
 def _get_google_search():
-    return GoogleSearchResults(args_schema=GoogleSearchInput, api_wrapper=GoogleSearchAPIWrapper())
+    return GoogleSearchResults(args_schema=GoogleSearchInput, api_wrapper=GoogleSearchAPIWrapper(search_engine=None))
 
 
 @lru_cache(maxsize=1)
@@ -74,13 +75,13 @@ def _get_duck_duck_go():
 
 @lru_cache(maxsize=1)
 def _get_arxiv():
-    return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(), args_schema=ArxivInput)
+    return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(arxiv_search=None, arxiv_exceptions=[]), args_schema=ArxivInput)
 
 
 @lru_cache(maxsize=1)
 def _get_you_search():
     return create_retriever_tool(
-        YouRetriever(n_hits=3, n_snippets_per_hit=3),
+        YouRetriever(),
         "you_search",
         "Searches for documents using You.com",
     )
@@ -111,20 +112,20 @@ def _get_press_releases():
 @lru_cache(maxsize=1)
 def _get_pubmed():
     return create_retriever_tool(
-        PubMedRetriever(), "pub_med_search", "Search for a query on PubMed"
+        PubMedRetriever(parse=True), "pub_med_search", "Search for a query on PubMed"
     )
 
 
 @lru_cache(maxsize=1)
 def _get_wikipedia():
     return create_retriever_tool(
-        WikipediaRetriever(), "wikipedia", "Search for a query on Wikipedia"
+        WikipediaRetriever(lang="zh", wiki_client=None), "wikipedia", "Search for a query on Wikipedia"
     )
 
 
 @lru_cache(maxsize=1)
 def _get_tavily():
-    tavily_search = TavilySearchAPIWrapper()
+    tavily_search = TavilySearchAPIWrapper(tavily_api_key=SecretStr(os.environ["TAVILY_API_KEY"]))
     return TavilySearchResults(api_wrapper=tavily_search)
 
 def _get_open_weather_map():
@@ -135,7 +136,7 @@ def _get_python_repl_tool():
 
 @lru_cache(maxsize=1)
 def _get_tavily_answer():
-    tavily_search = TavilySearchAPIWrapper()
+    tavily_search = TavilySearchAPIWrapper(tavily_api_key=SecretStr(os.environ["TAVILY_API_KEY"]))
     return TavilyAnswer(api_wrapper=tavily_search)
 
 
@@ -169,7 +170,6 @@ TOOLS = {
     AvailableTools.TAVILY: _get_tavily,
     AvailableTools.WIKIPEDIA: _get_wikipedia,
     AvailableTools.TAVILY_ANSWER: _get_tavily_answer,
-    AvailableTools.TAVILY: _get_tavily,
     AvailableTools.OPEN_WEATHER_MAP: _get_open_weather_map,
     AvailableTools.PYTHON_REPL_TOOL: _get_python_repl_tool,
     AvailableTools.GOOGLE_SEARCH: _get_google_search,

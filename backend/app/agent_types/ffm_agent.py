@@ -24,6 +24,7 @@ def get_ffm_agent_executor(
     tools: list[BaseTool],
     llm: LanguageModelLike,
     system_message: str,
+    interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver
 ):
     def _get_messages(messages):
@@ -117,4 +118,6 @@ def get_ffm_agent_executor(
     # This compiles it into a LangChain Runnable,
     # meaning you can use it as you would any other runnable
     app = workflow.compile(checkpointer=checkpoint)
+    if interrupt_before_action:
+      app.interrupt = ["action:inbox"]
     return app

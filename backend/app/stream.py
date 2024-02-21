@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncIterator, Optional, Sequence, Union
+from typing import AsyncIterator, Optional, Sequence, Union, Any
 
 import orjson
 from langchain_core.messages import (
@@ -21,12 +21,12 @@ from langserve.serialization import WellKnownLCSerializer
 
 logger = logging.getLogger(__name__)
 
-MessagesStream = AsyncIterator[Union[list[AnyMessage], str]]
+MessagesStream = AsyncIterator[Union[list[BaseMessageChunk], str]]
 
 
 async def astream_messages(
     app: Runnable, input: Sequence[AnyMessage], config: RunnableConfig
-) -> MessagesStream:
+) -> Any:
     """Stream messages from the runnable."""
     root_run_id: Optional[str] = None
     last_messages_list: Optional[list[AnyMessage]] = None

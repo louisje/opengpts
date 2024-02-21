@@ -4,10 +4,9 @@
 -e ./packages/langchain/libs/experimental
 -e ./packages/langchain/libs/partners/openai
 -e ./packages/langchain/libs/partners/google-vertexai
-langchain>=0.1.0
+-e ./packages/langchain/libs/partners/robocorp
 langserve>=0.0.23
 permchain
-httpx[socks]
+httpx[socks]>=0.25.2
 langgraph
 python-multipart
-langchain-robocorp>=0.0.1

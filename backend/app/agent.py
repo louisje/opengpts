@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Mapping, Optional, Sequence
 
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AnyMessage
 from langchain_core.runnables import (
     ConfigurableField,
@@ -41,7 +42,7 @@ class AgentType(str, Enum):
     CLAUDE2 = "Claude 2"
     GEMINI = "Gemini (Google)"
     FFM = "ffm-llama2-70b-exp (FFM)"
-    OLLAMA = "llama2-7b-chat (Ollama)"
+    OLLAMA = "llama2:70b-chat-q2_K (Ollama)"
 
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
@@ -77,12 +78,12 @@ def get_agent_executor(
         )
     elif agent == AgentType.FFM:
         llm = get_ffm_llm()
-        return get_google_agent_executor(
+        return get_ffm_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.OLLAMA:
-        llm = get_ollama_llm(model="llama2")
-        return get_google_agent_executor(
+        llm = get_ollama_llm(model="llama2:70b-chat-q2_K")
+        return get_ollama_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     else:
@@ -101,14 +102,14 @@ class ConfigurableAgent(RunnableBinding):
     def __init__(
         self,
         *,
-        tools: Sequence[str],
+        tools: Sequence[AvailableTools],
         agent: AgentType = AgentType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: Optional[str] = None,
         retrieval_description: str = RETRIEVAL_DESCRIPTION,
         interrupt_before_action: bool = False,
         kwargs: Optional[Mapping[str, Any]] = None,
-        config: Optional[Mapping[str, Any]] = None,
+        config: Optional[RunnableConfig] = None,
         **others: Any,
     ) -> None:
         others.pop("bound", None)
@@ -131,7 +132,7 @@ class ConfigurableAgent(RunnableBinding):
         )
         agent_executor = _agent.with_config({"recursion_limit": 50})
         super().__init__(
-            tools=tools,
+            tools=_tools,
             agent=agent,
             system_message=system_message,
             retrieval_description=retrieval_description,
@@ -148,7 +149,7 @@ class LLMType(str, Enum):
     GEMINI = "Gemini (Google)"
     FFM = "ffm-llama2-70b-exp (FFM)"
     MIXTRAL = "Mixtral"
-    OLLAMA = "llama2-7b-chat (Ollama)"
+    OLLAMA = "llama2:70b-chat-q2_K (Ollama)"
 
 
 def get_chatbot(
@@ -168,7 +169,7 @@ def get_chatbot(
     elif llm_type == LLMType.FFM:
         llm = get_ffm_llm()
     elif llm_type == LLMType.OLLAMA:
-        llm = get_ollama_llm(model="llama2")
+        llm = get_ollama_llm(model="llama2:70b-chat-q2_K")
     else:
         raise ValueError(f"Unexpected llm type {llm_type}")
     return get_chatbot_executor(llm, system_message, CHECKPOINTER)
@@ -185,7 +186,7 @@ class ConfigurableChatBot(RunnableBinding):
         llm: LLMType = LLMType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         kwargs: Optional[Mapping[str, Any]] = None,
-        config: Optional[Mapping[str, Any]] = None,
+        config: Optional[RunnableConfig] = None,
         **others: Any,
     ) -> None:
         others.pop("bound", None)
@@ -221,9 +222,9 @@ class ConfigurableRetrieval(RunnableBinding):
         *,
         llm_type: LLMType = LLMType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
-        assistant_id: Optional[str] = None,
+        assistant_id: str = "",
         kwargs: Optional[Mapping[str, Any]] = None,
-        config: Optional[Mapping[str, Any]] = None,
+        config: Optional[RunnableConfig] = None,
         **others: Any,
     ) -> None:
         others.pop("bound", None)
@@ -241,7 +242,7 @@ class ConfigurableRetrieval(RunnableBinding):
         elif llm_type == LLMType.FFM:
             llm = get_ffm_llm()
         elif llm_type == LLMType.OLLAMA:
-            llm = get_ollama_llm(model="llama2")
+            llm = get_ollama_llm(model="llama2:70b-chat-q2_K")
         else:
             raise ValueError("Unexpected llm type")
         chatbot = get_retrieval_executor(llm, retriever, system_message, CHECKPOINTER)
