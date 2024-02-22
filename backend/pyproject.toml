@@ -29,7 +29,7 @@ pyowm = "^3.3.0"
 google-api-python-client = "^2.115.0"
 langchain = {path = "packages/langchain/libs/langchain", develop = true}
 langgraph = "^0.0.23"
-pydantic = ">=2.6.1"
+pydantic = ">=1,<2"
 python-magic = "^0.4.27"
 langchain-openai = {path = "packages/langchain/libs/partners/openai", develop = true}
 beautifulsoup4 = "^4.12.3"

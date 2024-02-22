@@ -1,5 +1,7 @@
+from json import tool
 import os
 from functools import lru_cache
+from typing import Dict
 import httpx
 import boto3
 from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatOllama
@@ -20,7 +22,7 @@ def get_ollama_llm(model):
 
 def get_ffm_llm():
     llm = ChatFFM(
-        model="ffm-llama2-70b-exp",
+        model="ffm-llama2-70b-exp", # candidates: "ffm-llama2-70b-chat", "codellama-70b-instruct"
         max_new_tokens=1024,
         temperature=0.5,
         top_k=50,
@@ -90,12 +92,12 @@ def get_google_llm():
         model_name="gemini-pro",
         convert_system_message_to_human=True,
         streaming=True,
-        safety_settings={
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        },
+#       safety_settings={
+#           HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+#           HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+#           HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+#           HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+#       },
     )
 
 

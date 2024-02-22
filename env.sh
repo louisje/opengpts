@@ -1,2 +1,2 @@
 alias ollama='docker exec -it ollama ollama'
-alias logs='docker compose logs -t -f --tail=1000'
+alias logs='while countdown 15 opengpts; do docker compose logs -t -f --tail=1000; done'

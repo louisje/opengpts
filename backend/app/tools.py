@@ -25,7 +25,7 @@ from langchain_community.vectorstores.redis import RedisFilter
 from langchain_experimental.tools import PythonREPLTool
 
 from app.upload import vstore
-from pydantic.v1 import SecretStr
+from langchain.pydantic_v1 import SecretStr
 
 
 class DDGInput(BaseModel):

@@ -3,7 +3,6 @@ import os
 from langchain.tools.render import render_text_description
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from langchain_community.chat_models import ChatOllama
 from langchain_core.agents import AgentAction
 
 from langchain_core.language_models.base import LanguageModelLike
