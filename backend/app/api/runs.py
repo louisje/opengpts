@@ -54,12 +54,12 @@ async def _run_input_and_config(request: Request, opengpts_user_id: OpengptsUser
             "thread_id": body["thread_id"],
             "assistant_id": body["assistant_id"],
         },
-    }
+    } # type: ignore
     try:
-        input_ = (
+        input_: Sequence[AnyMessage] = (
             _unpack_input(agent.get_input_schema(config).validate(body["input"]))
             if body["input"] is not None
-            else None
+            else []
         )
     except ValidationError as e:
         raise RequestValidationError(e.errors(), body=body)

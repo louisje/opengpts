@@ -26,7 +26,7 @@ MessagesStream = AsyncIterator[Union[list[BaseMessageChunk], str]]
 
 async def astream_messages(
     app: Runnable, input: Sequence[AnyMessage], config: RunnableConfig
-) -> Any:
+) -> AsyncIterator:
     """Stream messages from the runnable."""
     root_run_id: Optional[str] = None
     last_messages_list: Optional[list[AnyMessage]] = None

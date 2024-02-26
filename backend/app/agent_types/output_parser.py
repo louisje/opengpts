@@ -2,6 +2,9 @@ import json
 import re
 
 from langchain.schema import AgentAction, AgentFinish
+from langchain_core.messages.chat import ChatMessage
+
+from langchain_core.outputs.chat_result import ChatResult
 
 def _replace_new_line(match: re.Match[str]) -> str:
     value = match.group(2)
@@ -31,6 +34,7 @@ def _custom_parser(multiline_string: str) -> str:
     )
 
     return multiline_string
+
 
 def parse_output(msg) -> AgentAction | AgentFinish:
     try:

@@ -1,3 +1,4 @@
+import json
 import os
 
 from langchain.tools.render import render_text_description
@@ -8,11 +9,8 @@ from langchain_core.agents import AgentAction
 from langchain_core.language_models.base import LanguageModelLike
 from langchain_core.messages.function import FunctionMessage
 from langchain_core.messages.system import SystemMessage
-from langchain_core.prompts.chat import SystemMessagePromptTemplate
 from langchain_core.tools import BaseTool
-
-from .prompt_template import template
-from .output_parser import parse_output
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
@@ -39,41 +37,38 @@ def get_ollama_agent_executor(
                 msgs.append(m_c)
             else:
                 msgs.append(m)
-        if tools:
-            parcial_variables = {
-                "tools": render_text_description(tools),
-                "tool_names": ", ".join([t.name for t in tools]),
-                "system_message": system_message,
-            }
-            prompt = SystemMessagePromptTemplate.from_template(template=template,partial_variables=parcial_variables)
-            return [prompt.format()] + msgs
-
         return [SystemMessage(content=system_message)] + msgs
 
-    agent = _get_messages | llm
+    if tools:
+        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
+    else:
+        llm_with_tools = llm
+    agent = _get_messages | llm_with_tools
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):
         last_message = messages[-1]
-        if isinstance(parse_output(last_message), AgentAction):
-            return "continue"
-        else:
+        # If there is no function call, then we finish
+        if "function_call" not in last_message.additional_kwargs:
             return "end"
+        # Otherwise if there is, we continue
+        else:
+            return "continue"
 
     # Define the function to execute tools
     async def call_tool(messages):
+        actions: list[ToolInvocation] = []
         # Based on the continue condition
         # we know the last message involves a function call
         last_message = messages[-1]
         # We construct an ToolInvocation from the function_call
-        _action = parse_output(last_message)
-        if not _action or not isinstance(_action, AgentAction):
-            raise ValueError("Invalid action type")
-        # We call the tool_executor and get back a response
         action = ToolInvocation(
-            tool=_action.tool,
-            tool_input=_action.tool_input,
+            tool=last_message.additional_kwargs["function_call"]["name"],
+            tool_input=json.loads(
+                last_message.additional_kwargs["function_call"]["arguments"]
+            ),
         )
+        # We call the tool_executor and get back a response
         response = await tool_executor.ainvoke(action)
         # We use the response to create a FunctionMessage
         function_message = FunctionMessage(content=str(response), name=action.tool)

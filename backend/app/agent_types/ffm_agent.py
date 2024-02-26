@@ -1,12 +1,14 @@
 import os
 
 from langchain.tools.render import render_text_description
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.chat import ChatMessagePromptTemplate
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models.base import LanguageModelLike
 from langchain_core.messages.system import SystemMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
+from langchain_core.prompts.string import StringPromptTemplate
 from langchain_core.tools import BaseTool
 from langchain_core.messages.function import FunctionMessage
 
@@ -16,6 +18,7 @@ from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.graph import END
 
 from app.message_types import LiberalFunctionMessage
+
 
 from .prompt_template import template
 from .output_parser import parse_output
@@ -39,13 +42,13 @@ def get_ffm_agent_executor(
             else:
                 msgs.append(m)
         if tools:
-            parcial_variables = {
+            partial_variables = {
                 "tools": render_text_description(tools),
                 "tool_names": ", ".join([t.name for t in tools]),
                 "system_message": system_message,
             }
-            prompt = SystemMessagePromptTemplate.from_template(template=template,partial_variables=parcial_variables)
-            return [prompt.format()] + msgs
+            prompt = PromptTemplate.from_template(template=template,partial_variables=partial_variables)
+            return [SystemMessage(content=prompt.format())] + msgs
 
         return [SystemMessage(content=system_message)] + msgs
 

@@ -32,13 +32,15 @@ from app.tools import (
     get_retriever,
 )
 
+from langchain_core.tools import BaseTool, Tool
+
 
 class AgentType(str, Enum):
     GPT_35_TURBO = "GPT 3.5 Turbo"
     GPT_4 = "GPT 4"
     GEMINI = "Gemini（Google）"
-    FFM = "ffm-llama2-70b-exp (FFM)"
-    OLLAMA = "llama2:7b-chat (Ollama)"
+    FFM = "ffm-llama2-70b-exp（FFM）"
+    OLLAMA = "llama2:7b-chat（Ollama）"
 
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
@@ -47,7 +49,7 @@ CHECKPOINTER = RedisCheckpoint(at=CheckpointAt.END_OF_STEP)
 
 
 def get_agent_executor(
-    tools: list,
+    tools: list[BaseTool],
     agent: AgentType,
     system_message: str,
     interrupt_before_action: bool,
@@ -78,7 +80,7 @@ def get_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     else:
-        raise ValueError("Unexpected agent type")
+        raise ValueError(f"Unexpected agent type {agent}")
 
 
 class ConfigurableAgent(RunnableBinding):
@@ -104,7 +106,7 @@ class ConfigurableAgent(RunnableBinding):
         **others: Any,
     ) -> None:
         others.pop("bound", None)
-        _tools = []
+        _tools: list[Tool] = []
         for _tool in tools:
             if _tool == AvailableTools.RETRIEVAL:
                 if assistant_id is None:
@@ -123,7 +125,7 @@ class ConfigurableAgent(RunnableBinding):
         )
         agent_executor = _agent.with_config({"recursion_limit": 50})
         super().__init__(
-            tools=_tools,
+            tools=tools,
             agent=agent,
             system_message=system_message,
             retrieval_description=retrieval_description,

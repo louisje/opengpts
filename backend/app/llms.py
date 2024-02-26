@@ -31,7 +31,7 @@ def get_ffm_llm():
         ffm_api_key=os.environ["FFM_API_KEY"],
         base_url=os.environ["FFM_BASE_URL"],
         streaming=True,
-        stop=None,
+        stop=["<|func_end|>"],
     )
     return llm
 
