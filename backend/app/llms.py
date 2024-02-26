@@ -38,7 +38,7 @@ def get_ffm_llm():
 @lru_cache(maxsize=4)
 def get_openai_llm(gpt_4: bool = False, azure: bool = False):
     proxy_url = os.getenv("PROXY_URL")
-    if proxy_url is not None or proxy_url != "":
+    if proxy_url is not None and proxy_url != "":
         http_client = httpx.AsyncClient(proxies=proxy_url)
     else:
         http_client = None
