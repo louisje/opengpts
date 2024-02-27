@@ -17,6 +17,8 @@ def get_ollama_llm(model):
         stop=["[INST]","[/INST]"],
         streaming=True,
         num_gpu=0,
+        temperature=0.5,
+        repeat_penalty=1.0,
     )
     return llm
 

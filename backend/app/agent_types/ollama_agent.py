@@ -1,14 +1,9 @@
 import json
-import os
-
-from langchain.tools.render import render_text_description
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-from langchain_core.agents import AgentAction
 
 from langchain_core.language_models.base import LanguageModelLike
+from langchain_core.messages.ai import AIMessage
+from langchain_core.messages.chat import ChatMessage
 from langchain_core.messages.function import FunctionMessage
-from langchain_core.messages.system import SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
 
@@ -18,6 +13,8 @@ from langgraph.graph.message import MessageGraph
 from langgraph.graph import END
 
 from app.message_types import LiberalFunctionMessage
+
+from langchain_experimental.llms.ollama_functions import DEFAULT_RESPONSE_FUNCTION
 
 def get_ollama_agent_executor(
     tools: list[BaseTool],
@@ -37,17 +34,52 @@ def get_ollama_agent_executor(
                 msgs.append(m_c)
             else:
                 msgs.append(m)
-        return [SystemMessage(content=system_message)] + msgs
+        return msgs
+        # return [SystemMessage(content=system_message)] + msgs
 
-    if tools:
-        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
-    else:
-        llm_with_tools = llm
-    agent = _get_messages | llm_with_tools
+    functions = [convert_to_openai_function(t) for t in tools]
+
+    def _parse_function(msg: AIMessage) -> AIMessage:
+        if not isinstance(msg.content, str):
+            raise ValueError("OllamaFunctions does not support non-string output.")
+        try:
+            print(msg.content)
+            parsed_chat_result = json.loads(msg.content)
+        except json.JSONDecodeError:
+            print("Failed to parse a function call from OllamaFunctions output.")
+            return msg
+        called_tool_name = parsed_chat_result["tool"]
+        called_tool_arguments = parsed_chat_result["tool_input"]
+        called_tool = next(
+            (fn for fn in functions if fn["name"] == called_tool_name), None
+        )
+        if called_tool is None:
+            raise ValueError(
+                f"Failed to parse a function call from {llm.name} output: {msg.content}"
+            )
+        if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:
+            return AIMessage(
+                content=called_tool_arguments["response"]
+            )
+
+        return AIMessage(
+            content="",
+            additional_kwargs={
+                "function_call": {
+                    "name": called_tool_name,
+                    "arguments": json.dumps(called_tool_arguments)
+                    if called_tool_arguments
+                    else "",
+                },
+            },
+        )
+
+    llm_with_tools = llm.bind(functions=functions)
+    agent = _get_messages | llm_with_tools | _parse_function
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):
-        last_message = messages[-1]
+        last_message: ChatMessage = messages[-1]
         # If there is no function call, then we finish
         if "function_call" not in last_message.additional_kwargs:
             return "end"

@@ -106,7 +106,7 @@ class ConfigurableAgent(RunnableBinding):
         **others: Any,
     ) -> None:
         others.pop("bound", None)
-        _tools: list[Tool] = []
+        _tools: list[BaseTool] = []
         for _tool in tools:
             if _tool == AvailableTools.RETRIEVAL:
                 if assistant_id is None:
@@ -125,10 +125,10 @@ class ConfigurableAgent(RunnableBinding):
         )
         agent_executor = _agent.with_config({"recursion_limit": 50})
         super().__init__(
-            tools=tools,
-            agent=agent,
-            system_message=system_message,
-            retrieval_description=retrieval_description,
+            tools=tools,  # type: ignore
+            agent=agent,  # type: ignore
+            system_message=system_message,  # type: ignore
+            retrieval_description=retrieval_description,  # type: ignore
             bound=agent_executor,
             kwargs=kwargs or {},
             config=config or {},
@@ -180,8 +180,8 @@ class ConfigurableChatBot(RunnableBinding):
 
         chatbot = get_chatbot(llm, system_message)
         super().__init__(
-            llm=llm,
-            system_message=system_message,
+            llm=llm,  # type: ignore
+            system_message=system_message,  # type: ignore
             bound=chatbot,
             kwargs=kwargs or {},
             config=config or {},
@@ -230,8 +230,8 @@ class ConfigurableRetrieval(RunnableBinding):
             raise ValueError("Unexpected llm type")
         chatbot = get_retrieval_executor(llm, retriever, system_message, CHECKPOINTER)
         super().__init__(
-            llm_type=llm_type,
-            system_message=system_message,
+            llm_type=llm_type,  # type: ignore
+            system_message=system_message,  # type: ignore
             bound=chatbot,
             kwargs=kwargs or {},
             config=config or {},

@@ -18,6 +18,7 @@ from langchain_community.tools.openweathermap import OpenWeatherMapQueryRun
 from langchain_community.tools.connery import ConneryService
 from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
+from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 from langchain_community.vectorstores.redis import RedisFilter
@@ -41,6 +42,9 @@ class PythonREPLInput(BaseModel):
 
 class GoogleSearchInput(BaseModel):
     query: str = Field(description="search query to look up")
+
+class OpenWeatherMapInput(BaseModel):
+    location: str = Field(description="location to query")
 
 
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
@@ -129,7 +133,7 @@ def _get_tavily():
     return TavilySearchResults(api_wrapper=tavily_search)
 
 def _get_open_weather_map():
-    return OpenWeatherMapQueryRun(name="open_weather_map")
+    return OpenWeatherMapQueryRun(name="open_weather_map",args_schema=OpenWeatherMapInput, api_wrapper=OpenWeatherMapAPIWrapper())
 
 def _get_python_repl_tool():
     return PythonREPLTool(args_schema=PythonREPLInput)
