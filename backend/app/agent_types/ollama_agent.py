@@ -1,9 +1,12 @@
 import json
 
+from langchain_community.chat_models.ollama import ChatOllama
+
 from langchain_core.language_models.base import LanguageModelLike
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.chat import ChatMessage
 from langchain_core.messages.function import FunctionMessage
+from langchain_core.messages.system import SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
 
@@ -18,12 +21,14 @@ from langchain_experimental.llms.ollama_functions import DEFAULT_RESPONSE_FUNCTI
 
 def get_ollama_agent_executor(
     tools: list[BaseTool],
-    llm: LanguageModelLike,
+    llm: ChatOllama,
     system_message: str,
     interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver
 ):
-    def _get_messages(messages):
+    functions = [convert_to_openai_function(t) for t in tools]
+
+    def _get_messages_(messages):
         msgs = []
         prompt = None
         for m in messages:
@@ -34,21 +39,19 @@ def get_ollama_agent_executor(
                 msgs.append(m_c)
             else:
                 msgs.append(m)
-        return msgs
-        # return [SystemMessage(content=system_message)] + msgs
 
-    functions = [convert_to_openai_function(t) for t in tools]
+        return [SystemMessage(content=system_message)] + msgs
 
-    def _parse_function(msg: AIMessage) -> AIMessage:
+    def _parse_function_(msg: AIMessage) -> AIMessage:
         if not isinstance(msg.content, str):
             raise ValueError("OllamaFunctions does not support non-string output.")
         try:
-            print(msg.content)
+            print([msg.content]) # Qoo
             parsed_chat_result = json.loads(msg.content)
         except json.JSONDecodeError:
-            print("Failed to parse a function call from OllamaFunctions output.")
+            print("Unable to parse a function call from OllamaFunctions output.")
             return msg
-        called_tool_name = parsed_chat_result["tool"]
+        called_tool_name = parsed_chat_result["tool_name"]
         called_tool_arguments = parsed_chat_result["tool_input"]
         called_tool = next(
             (fn for fn in functions if fn["name"] == called_tool_name), None
@@ -75,7 +78,7 @@ def get_ollama_agent_executor(
         )
 
     llm_with_tools = llm.bind(functions=functions)
-    agent = _get_messages | llm_with_tools | _parse_function
+    agent = _get_messages_ | llm_with_tools | _parse_function_
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):

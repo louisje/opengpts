@@ -6,3 +6,4 @@
 * [ ] QwenLM
 * [ ] LangGraph/CRAG
 * [X] Huggingface Chat Assistant
+* [ ] APIChain

@@ -22,10 +22,10 @@ app.include_router(api_router)
 
 
 @app.post("/ingest", description="Upload files to the given assistant.")
-def ingest_files(files: list[UploadFile], config: str = Form(...)) -> None:
+def ingest_files(files: list[UploadFile], config: str = Form(...)):
     """Ingest a list of files."""
-    config = orjson.loads(config)
-    return ingest_runnable.batch([file.file for file in files], config)
+    config_json = orjson.loads(config)
+    return ingest_runnable.batch([file.file for file in files], config_json)
 
 
 ui_dir = str(ROOT / "ui")

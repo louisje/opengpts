@@ -69,7 +69,7 @@ def get_retrieval_executor(
         conversation = "\n".join(convo)
         prompt = await search_prompt.ainvoke({"conversation": conversation})
         response = await llm.ainvoke(prompt)
-        return response.content
+        return response
 
     async def invoke_retrieval(messages):
         if len(messages) == 1:

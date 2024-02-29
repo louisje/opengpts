@@ -103,9 +103,8 @@ class IngestRunnable(RunnableSerializable[BinaryIO, List[str]]):
         return ids
 
 
-index_schema = {
-    "tag": [{"name": "namespace"}],
-}
+index_schema = "redis_index_schema.yaml"
+
 vstore = Redis(
     redis_url=os.environ["REDIS_URL"],
     index_name="opengpts",
@@ -115,8 +114,9 @@ vstore = Redis(
 
 
 ingest_runnable = IngestRunnable(
-    text_splitter=RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100),
+    text_splitter=RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=96),
     vectorstore=vstore,
+    assistant_id=None
 ).configurable_fields(
     assistant_id=ConfigurableField(
         id="assistant_id",

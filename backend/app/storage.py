@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import List, Sequence
+from queue import Empty
+from typing import Any, Dict, List, Sequence
 
 import orjson
 from langchain.schema.messages import AnyMessage
@@ -11,6 +12,8 @@ from app.agent import AgentType, get_agent_executor
 from app.redis import get_redis_client
 from app.schema import Assistant, AssistantWithoutUserId, Thread, ThreadWithoutUserId
 from app.stream import map_chunk_to_msg
+
+from langchain_core.runnables.config import RunnableConfig
 
 
 def assistants_list_key(user_id: str) -> str:
@@ -42,7 +45,7 @@ def load(keys: list[str], values: list[bytes]) -> dict:
     return {k: orjson.loads(v) if v is not None else None for k, v in zip(keys, values)}
 
 
-def list_assistants(user_id: str) -> List[Assistant]:
+def list_assistants(user_id: str) -> List[Dict[Any, Any]]:
     """List all assistants for the current user."""
     client = get_redis_client()
     ids = [orjson.loads(id) for id in client.smembers(assistants_list_key(user_id))]
@@ -53,16 +56,16 @@ def list_assistants(user_id: str) -> List[Assistant]:
     return [load(assistant_hash_keys, values) for values in assistants]
 
 
-def get_assistant(user_id: str, assistant_id: str) -> Assistant | None:
+def get_assistant(user_id: str, assistant_id: str) -> Dict[Any, Any] | None:
     """Get an assistant by ID."""
     client = get_redis_client()
-    values = client.hmget(assistant_key(user_id, assistant_id), *assistant_hash_keys)
+    values: List[Any] = client.hmget(assistant_key(user_id, assistant_id), *assistant_hash_keys)
     return load(assistant_hash_keys, values) if any(values) else None
 
 
 def list_public_assistants(
     assistant_ids: Sequence[str]
-) -> List[AssistantWithoutUserId]:
+) -> List[Dict[Any, Any]]:
     """List all the public assistants."""
     if not assistant_ids:
         return []
@@ -100,7 +103,7 @@ def put_assistant(
     Returns:
         return the assistant model if no exception is raised.
     """
-    saved: Assistant = {
+    saved = {
         "user_id": user_id,  # TODO(Nuno): Could we remove this?
         "assistant_id": assistant_id,  # TODO(Nuno): remove this?
         "name": name,
@@ -116,10 +119,10 @@ def put_assistant(
             pipe.sadd(assistants_list_key(public_user_id), orjson.dumps(assistant_id))
             pipe.hset(assistant_key(public_user_id, assistant_id), mapping=_dump(saved))
         pipe.execute()
-    return saved
+    return Assistant(**saved)
 
 
-def list_threads(user_id: str) -> List[ThreadWithoutUserId]:
+def list_threads(user_id: str):
     """List all threads for the current user."""
     client = get_redis_client()
     ids = [orjson.loads(id) for id in client.smembers(threads_list_key(user_id))]
@@ -130,10 +133,10 @@ def list_threads(user_id: str) -> List[ThreadWithoutUserId]:
     return [load(thread_hash_keys, values) for values in threads]
 
 
-def get_thread(user_id: str, thread_id: str) -> Thread | None:
+def get_thread(user_id: str, thread_id: str):
     """Get a thread by ID."""
     client = get_redis_client()
-    values = client.hmget(thread_key(user_id, thread_id), *thread_hash_keys)
+    values: List[Any] = client.hmget(thread_key(user_id, thread_id), *thread_hash_keys)
     return load(thread_hash_keys, values) if any(values) else None
 
 
@@ -143,7 +146,7 @@ MESSAGES_CHANNEL_NAME = "__root__"
 
 def get_thread_messages(user_id: str, thread_id: str):
     """Get all messages for a thread."""
-    config = {"configurable": {"user_id": user_id, "thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"user_id": user_id, "thread_id": thread_id}}
     app = get_agent_executor([], AgentType.GPT_35_TURBO, "", False)
     checkpoint = app.checkpointer.get(config) or empty_checkpoint()
     with ChannelsManager(app.channels, checkpoint) as channels:
@@ -157,7 +160,7 @@ def get_thread_messages(user_id: str, thread_id: str):
 
 def post_thread_messages(user_id: str, thread_id: str, messages: Sequence[AnyMessage]):
     """Add messages to a thread."""
-    config = {"configurable": {"user_id": user_id, "thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"user_id": user_id, "thread_id": thread_id}}
     app = get_agent_executor([], AgentType.GPT_35_TURBO, "", False)
     checkpoint = app.checkpointer.get(config) or empty_checkpoint()
     with ChannelsManager(app.channels, checkpoint) as channels:
@@ -170,7 +173,7 @@ def post_thread_messages(user_id: str, thread_id: str, messages: Sequence[AnyMes
 
 def put_thread(user_id: str, thread_id: str, *, assistant_id: str, name: str) -> Thread:
     """Modify a thread."""
-    saved: Thread = {
+    saved = {
         "user_id": user_id,  # TODO(Nuno): Could we remove this?
         "thread_id": thread_id,
         "assistant_id": assistant_id,
@@ -182,11 +185,11 @@ def put_thread(user_id: str, thread_id: str, *, assistant_id: str, name: str) ->
         pipe.sadd(threads_list_key(user_id), orjson.dumps(thread_id))
         pipe.hset(thread_key(user_id, thread_id), mapping=_dump(saved))
         pipe.execute()
-    return saved
+    return Thread(**saved)
 
 
 if __name__ == "__main__":
     print(list_assistants("133"))
     print(list_threads("123"))
     put_assistant("123", "i-am-a-test", name="Test Agent", config={"tags": ["hello"]})
-    put_thread("123", "i-am-a-test", "test1", name="Test Thread")
+    put_thread(user_id="123", thread_id="i-am-a-test", assistant_id="test1", name="Test Thread")
