@@ -28,7 +28,7 @@ def get_ollama_agent_executor(
 ):
     functions = [convert_to_openai_function(t) for t in tools]
 
-    def _get_messages_(messages):
+    def _get_messages(messages):
         msgs = []
         prompt = None
         for m in messages:
@@ -42,7 +42,7 @@ def get_ollama_agent_executor(
 
         return [SystemMessage(content=system_message)] + msgs
 
-    def _parse_function_(msg: AIMessage) -> AIMessage:
+    def _parse_function(msg: AIMessage) -> AIMessage:
         if not isinstance(msg.content, str):
             raise ValueError("OllamaFunctions does not support non-string output.")
         try:
@@ -78,7 +78,7 @@ def get_ollama_agent_executor(
         )
 
     llm_with_tools = llm.bind(functions=functions)
-    agent = _get_messages_ | llm_with_tools | _parse_function_
+    agent = _get_messages | llm_with_tools | _parse_function
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):

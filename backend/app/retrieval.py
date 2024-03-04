@@ -72,28 +72,16 @@ def get_retrieval_executor(
         return response
 
     async def invoke_retrieval(messages):
-        if len(messages) == 1:
-            human_input = messages[-1].content
-            return AIMessage(
-                content="",
-                additional_kwargs={
-                    "function_call": {
-                        "name": "retrieval",
-                        "arguments": json.dumps({"query": human_input}),
-                    }
-                },
-            )
-        else:
-            search_query = await get_search_query.ainvoke(messages)
-            return AIMessage(
-                content="",
-                additional_kwargs={
-                    "function_call": {
-                        "name": "retrieval",
-                        "arguments": json.dumps({"query": search_query}),
-                    }
-                },
-            )
+        human_input = messages[-1].content
+        return AIMessage(
+            content="",
+            additional_kwargs={
+                "function_call": {
+                    "name": "retrieval",
+                    "arguments": json.dumps({"query": human_input}),
+                }
+            },
+        )
 
     async def retrieve(messages):
         params = messages[-1].additional_kwargs["function_call"]
