@@ -18,13 +18,15 @@ def get_ollama_llm(model):
         streaming=True,
         num_gpu=0,
         temperature=0.5,
+        top_k=50,
+        top_p=1.0,
         repeat_penalty=1.0,
     )
     return llm
 
-def get_ffm_llm():
+def get_ffm_llm(model: str):
     llm = ChatFFM(
-        model="ffm-llama2-70b-exp", # candidates: "ffm-llama2-70b-chat", "codellama-70b-instruct"
+        model=model,
         max_new_tokens=1024,
         temperature=0.5,
         top_k=50,

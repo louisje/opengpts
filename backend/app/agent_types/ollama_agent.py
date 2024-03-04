@@ -70,7 +70,7 @@ def get_ollama_agent_executor(
             additional_kwargs={
                 "function_call": {
                     "name": called_tool_name,
-                    "arguments": json.dumps(called_tool_arguments)
+                    "arguments": json.dumps(called_tool_arguments, indent=4)
                     if called_tool_arguments
                     else "",
                 },

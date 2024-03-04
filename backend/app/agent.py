@@ -1,4 +1,5 @@
 from enum import Enum
+import os
 from typing import Any, Mapping, Optional, Sequence
 
 from langchain_core.runnables.config import RunnableConfig
@@ -34,13 +35,15 @@ from app.tools import (
 
 from langchain_core.tools import BaseTool, Tool
 
+OLLAMA_MODEL_NAME = os.environ["OLLAMA_MODEL"]
+FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 
 class AgentType(str, Enum):
     GPT_35_TURBO = "GPT 3.5 Turbo"
     GPT_4 = "GPT 4"
     GEMINI = "Gemini（Google）"
-    FFM = "ffm-llama2-70b-exp（FFM）"
-    OLLAMA = "llama2:7b-chat（Ollama）"
+    FFM = f"FFM（{FFM_MODEL_NAME}）"
+    OLLAMA = f"Ollama（{OLLAMA_MODEL_NAME}）"
 
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
@@ -70,12 +73,12 @@ def get_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.FFM:
-        llm = get_ffm_llm()
+        llm = get_ffm_llm(model=FFM_MODEL_NAME)
         return get_ffm_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.OLLAMA:
-        llm = get_ollama_llm(model="llama2")
+        llm = get_ollama_llm(model=OLLAMA_MODEL_NAME)
         return get_ollama_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
@@ -139,8 +142,8 @@ class LLMType(str, Enum):
     GPT_35_TURBO = "GPT 3.5 Turbo"
     GPT_4 = "GPT 4"
     GEMINI = "Gemini（Google）"
-    FFM = "ffm-llama2-70b-exp（FFM）"
-    OLLAMA = "llama2:7b-chat（Ollama）"
+    FFM = f"FFM（{FFM_MODEL_NAME}）"
+    OLLAMA = f"Ollama（{OLLAMA_MODEL_NAME}）"
 
 
 def get_chatbot(
@@ -154,9 +157,9 @@ def get_chatbot(
     elif llm_type == LLMType.GEMINI:
         llm = get_google_llm()
     elif llm_type == LLMType.FFM:
-        llm = get_ffm_llm()
+        llm = get_ffm_llm(model=FFM_MODEL_NAME)
     elif llm_type == LLMType.OLLAMA:
-        llm = get_ollama_llm(model="llama2")
+        llm = get_ollama_llm(model=OLLAMA_MODEL_NAME)
     else:
         raise ValueError(f"Unexpected llm type {llm_type}")
     return get_chatbot_executor(llm, system_message, CHECKPOINTER)
@@ -223,9 +226,9 @@ class ConfigurableRetrieval(RunnableBinding):
         elif llm_type == LLMType.GEMINI:
             llm = get_google_llm()
         elif llm_type == LLMType.FFM:
-            llm = get_ffm_llm()
+            llm = get_ffm_llm(model=FFM_MODEL_NAME)
         elif llm_type == LLMType.OLLAMA:
-            llm = get_ollama_llm(model="llama2")
+            llm = get_ollama_llm(model=OLLAMA_MODEL_NAME)
         else:
             raise ValueError("Unexpected llm type")
         chatbot = get_retrieval_executor(llm, retriever, system_message, CHECKPOINTER)
