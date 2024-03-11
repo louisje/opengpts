@@ -1,29 +1,25 @@
+from argparse import Action
+from email import charset
+from email.policy import strict
 import json
+from textwrap import indent
+from typing import List
+from unittest.mock import Base
 
-from langchain_core.language_models.base import LanguageModelLike
+from app.tools import TOOLS, AvailableTools
+
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.prompts import PromptTemplate
+from langchain_core.messages.base import BaseMessage
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import chain
+
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.graph import END
 from langgraph.graph.message import MessageGraph
+from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
 from app.message_types import LiberalFunctionMessage
-
-search_prompt = PromptTemplate.from_template(
-    """Given the conversation below, come up with a search query to look up.
-
-This search query can be either a few words or question
-
-Return ONLY this search query, nothing more.
-
->>> Conversation:
-{conversation}
->>> END OF CONVERSATION
-
-Remember, return ONLY the search query that will help you when formulating a response to the above conversation."""
-)
 
 
 response_prompt_template = """{instructions}
@@ -32,23 +28,37 @@ Respond to the user using ONLY the context provided below. Do not make anything 
 
 {context}"""
 
+ask_prompt_template = """Here is the question:
+{question}
+
+Is the following content can answer to the question? Please answer in exactly "Yes" or "No" or "Not sure" without any other explaination.
+
+{context}"""
+
+search_prompt_template = """Here is the question:
+{question}
+
+If I want to search query on internet, how do I compose search query string? Please provide search query string itself ONLY, without any other explaination."""
+
 
 def get_retrieval_executor(
-    llm: LanguageModelLike,
+    llm: BaseChatModel,
     retriever: BaseRetriever,
     system_message: str,
     checkpoint: BaseCheckpointSaver,
 ):
+    tool_executor = ToolExecutor([TOOLS[AvailableTools.WIKIPEDIA]()])
+
     def _get_messages(messages):
         chat_history = []
-        for m in messages:
-            if isinstance(m, AIMessage):
-                if "function_call" not in m.additional_kwargs:
-                    chat_history.append(m)
-            if isinstance(m, HumanMessage):
-                chat_history.append(m)
-        response = messages[-1].content
-        content = "\n".join([d.page_content for d in response])
+        for msg in messages:
+            if isinstance(msg, AIMessage):
+                if "function_call" not in msg.additional_kwargs:
+                    chat_history.append(msg)
+            if isinstance(msg, HumanMessage):
+                chat_history.append(msg)
+        docs = messages[-1].content
+        content = "\n...\n".join([doc.page_content for doc in docs])
         return [
             SystemMessage(
                 content=response_prompt_template.format(
@@ -56,20 +66,6 @@ def get_retrieval_executor(
                 )
             )
         ] + chat_history
-
-    @chain
-    async def get_search_query(messages):
-        convo = []
-        for m in messages:
-            if isinstance(m, AIMessage):
-                if "function_call" not in m.additional_kwargs:
-                    convo.append(f"AI: {m.content}")
-            if isinstance(m, HumanMessage):
-                convo.append(f"Human: {m.content}")
-        conversation = "\n".join(convo)
-        prompt = await search_prompt.ainvoke({"conversation": conversation})
-        response = await llm.ainvoke(prompt)
-        return response
 
     async def invoke_retrieval(messages):
         human_input = messages[-1].content
@@ -83,22 +79,103 @@ def get_retrieval_executor(
             },
         )
 
+    def ask_retrieval(messages) -> str:
+        question = ""
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                question = msg.content
+        docs = messages[-1].content
+        content = "\n...\n".join([doc.page_content for doc in docs])
+        response = llm.invoke(input=ask_prompt_template.format(question=question, context=content))
+        answer = str(response.content)
+        print("ANSWER: ", answer) # DEBUG
+        return answer
+
     async def retrieve(messages):
         params = messages[-1].additional_kwargs["function_call"]
         query = json.loads(params["arguments"])["query"]
         response = await retriever.ainvoke(query)
         msg = LiberalFunctionMessage(name="retrieval", content=response)
         return msg
+    
+    async def invoke_search_full(messages):
+        retrieve = messages.pop()
+        chat_history: List[BaseMessage] = []
+        question = ""
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                question = msg.content
+            if isinstance(msg, AIMessage):
+                if "function_call" not in msg.additional_kwargs:
+                    chat_history.append(msg)
+            if isinstance(msg, HumanMessage):
+                chat_history.append(msg)
+
+        chat_history.pop()
+        chat_history.append(HumanMessage(content=search_prompt_template.format(question=question)))
+        response = await llm.agenerate(messages=[chat_history])
+        search_keyword = response.generations[0][0].text
+        print("SEARCH KEYWORD: ", search_keyword)
+        action = ToolInvocation(tool=TOOLS[AvailableTools.WIKIPEDIA]().name, tool_input={"query":search_keyword})
+        result = await tool_executor.ainvoke(action)
+
+        retrieve.content = result
+
+        return retrieve
+
+    async def invoke_search_half(messages):
+        retrieve = messages.pop()
+        chat_history: List[BaseMessage] = []
+        question = ""
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                question = msg.content
+            if isinstance(msg, AIMessage):
+                if "function_call" not in msg.additional_kwargs:
+                    chat_history.append(msg)
+            if isinstance(msg, HumanMessage):
+                chat_history.append(msg)
+
+        chat_history.pop()
+        chat_history.append(HumanMessage(content=search_prompt_template.format(question=question)))
+        response = await llm.agenerate(messages=[chat_history])
+        search_keyword = response.generations[0][0].text
+        print("SEARCH KEYWORD: ", search_keyword)
+        action = ToolInvocation(tool=TOOLS[AvailableTools.WIKIPEDIA]().name, tool_input={"query":search_keyword})
+        search_results = await tool_executor.ainvoke(action)
+
+        if len(search_results) > 0:
+            retrieve.content[2] = search_results[0]
+        if len(search_results) > 1:
+            retrieve.content[3] = search_results[1]
+
+        return retrieve
+
 
     response = _get_messages | llm
 
     workflow = MessageGraph()
+
     workflow.add_node("invoke_retrieval", invoke_retrieval)
     workflow.add_node("retrieve", retrieve)
     workflow.add_node("response", response)
+    workflow.add_node("invoke_search_full", invoke_search_full)
+    workflow.add_node("invoke_search_half", invoke_search_half)
+
     workflow.set_entry_point("invoke_retrieval")
+ 
     workflow.add_edge("invoke_retrieval", "retrieve")
-    workflow.add_edge("retrieve", "response")
+    workflow.add_conditional_edges(
+        "retrieve",
+        ask_retrieval,
+        {
+            "Yes": "response",
+            "No": "invoke_search_full",
+            "Not sure": "invoke_search_half",
+        },
+    )
+    workflow.add_edge("invoke_search_full", "response")
+    workflow.add_edge("invoke_search_half", "response")
     workflow.add_edge("response", END)
-    app = workflow.compile(checkpointer=checkpoint)
-    return app
+ 
+    return workflow.compile(checkpointer=checkpoint)

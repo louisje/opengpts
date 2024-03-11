@@ -1,5 +1,4 @@
 from datetime import datetime
-from queue import Empty
 from typing import Any, Dict, List, Sequence
 
 import orjson
@@ -10,7 +9,7 @@ from langgraph.pregel import _prepare_next_tasks
 
 from app.agent import AgentType, get_agent_executor
 from app.redis import get_redis_client
-from app.schema import Assistant, AssistantWithoutUserId, Thread, ThreadWithoutUserId
+from app.schema import Assistant, Thread
 from app.stream import map_chunk_to_msg
 
 from langchain_core.runnables.config import RunnableConfig
@@ -154,7 +153,7 @@ def get_thread_messages(user_id: str, thread_id: str):
             "messages": [
                 map_chunk_to_msg(msg) for msg in channels[MESSAGES_CHANNEL_NAME].get()
             ],
-            "resumeable": bool(_prepare_next_tasks(checkpoint, app.nodes, channels)),
+            "resumeable": False,
         }
 
 

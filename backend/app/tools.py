@@ -122,9 +122,7 @@ def _get_pubmed():
 
 @lru_cache(maxsize=1)
 def _get_wikipedia():
-    return create_retriever_tool(
-        WikipediaRetriever(lang="zh", wiki_client=None), "wikipedia", "Search for a query on Wikipedia"
-    )
+    return WikipediaRetriever(lang="zh", wiki_client=None, name="Wikipedia", description="Search for a query on Wikipedia")
 
 
 @lru_cache(maxsize=1)
@@ -143,16 +141,6 @@ def _get_tavily_answer():
     tavily_search = TavilySearchAPIWrapper(tavily_api_key=SecretStr(os.environ["TAVILY_API_KEY"]))
     return TavilyAnswer(api_wrapper=tavily_search)
 
-
-@lru_cache(maxsize=1)
-def _get_connery_actions():
-    connery_service = ConneryService(
-        runner_url=os.environ.get("CONNERY_RUNNER_URL"),
-        api_key=os.environ.get("CONNERY_RUNNER_API_KEY"),
-    )
-    connery_toolkit = ConneryToolkit.create_instance(connery_service)
-    tools = connery_toolkit.get_tools()
-    return tools
 
 
 class AvailableTools(str, Enum):

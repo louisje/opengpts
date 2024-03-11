@@ -1,25 +1,33 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S bash -x
 
 if [ "$1" = "--no-prune" ]; then
     shift
-else
-    containers="$(docker ps -q -f name=redis -f name=nginx -f name=frontend -f name=backend -f name=ollama)"
-    if [ -n "$containers" ]; then
-        docker stop $containers
-    fi
-
-    docker container prune -f
-    docker image prune -f
-    if [ "$1" = "--prune-only" ]; then
-        exit
-    fi
-fi
-
-if [ "$1" = "--build-only" ]; then
+    no_prune=yes
+elif [ "$1" = "--build-only" ]; then
     shift
-    docker compose build "$@"
+    docker compose build
     exit
 fi
 
-docker compose up -d --build "$@"
+if [ -z "$no_prune" ]; then
+    docker container prune -f
+    docker image prune -f
+fi
+if [ "$1" = "--prune-only" ]; then
+    exit
+fi
+
+if [ "$1" = "--all" ]; then
+    shift
+    docker compose up -d --build
+    exit
+elif [ -z "$1" ]; then
+    docker compose up -d --build backend
+    exit
+fi
+
+for container in "$@"; do
+    docker compose build "$container"
+    docker compose restart "$container"
+done
 

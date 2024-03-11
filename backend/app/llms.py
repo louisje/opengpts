@@ -1,22 +1,21 @@
-from json import tool
 import logging
 import os
-from functools import lru_cache
-from urllib.parse import urlparse
-from typing import Dict
 import httpx
 import boto3
+
+from functools import lru_cache
+from urllib.parse import urlparse
+
 from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
-from langchain_google_vertexai import ChatVertexAI
-from langchain_google_vertexai._enums import HarmBlockThreshold, HarmCategory
+from langchain_google_vertexai import ChatVertexAI, HarmCategory, HarmBlockThreshold
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 def get_ollama_llm(model):
     llm = ChatOllama(
         base_url="http://ollama:11434",
         model=model,
-        stop=["[INST]","[/INST]"],
+        stop=["[INST]","[/INST]","<start_of_turn>","<end_of_turn>"],
         streaming=True,
         num_gpu=0,
         temperature=0.5,
@@ -60,14 +59,14 @@ def get_openai_llm(gpt_4: bool = False, azure: bool = False):
             llm = ChatOpenAI(
                 http_client=http_client,
                 model="gpt-4-1106-preview",
-                temperature=0,
+                temperature=0.5,
                 streaming=True,
             )
         else:
             llm = ChatOpenAI(
                 http_client=http_client,
                 model="gpt-3.5-turbo-1106",
-                temperature=0,
+                temperature=0.5,
                 streaming=True,
             )
     else:
@@ -102,7 +101,7 @@ def get_anthropic_llm(bedrock: bool = False):
 def get_google_llm():
     return ChatVertexAI(
         project=os.environ["GOOGLE_CLOUD_PROJECT_ID"],
-        model_name="gemini-pro",
+        model_name=os.environ["GEMINI_MODEL"],
         convert_system_message_to_human=True,
         streaming=True,
 #       safety_settings={

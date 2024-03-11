@@ -1,4 +1,5 @@
 from enum import Enum
+import json
 import os
 from typing import Any, Mapping, Optional, Sequence
 
@@ -33,17 +34,18 @@ from app.tools import (
     get_retriever,
 )
 
-from langchain_core.tools import BaseTool, Tool
+from langchain_core.tools import BaseTool
 
 OLLAMA_MODEL_NAME = os.environ["OLLAMA_MODEL"]
 FFM_MODEL_NAME = os.environ["FFM_MODEL"]
+GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
 
 class AgentType(str, Enum):
-    GPT_35_TURBO = "GPT 3.5 Turbo"
-    GPT_4 = "GPT 4"
-    GEMINI = "Gemini（Google）"
-    FFM = f"FFM（{FFM_MODEL_NAME}）"
-    OLLAMA = f"Ollama（{OLLAMA_MODEL_NAME}）"
+    GPT_35_TURBO = "gpt-3.5-turbo (OpenAI)"
+    GPT_4 = "gpt-4 (OpenAI)"
+    GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
+    FFM = f"{FFM_MODEL_NAME} (FFM)"
+    OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
@@ -139,11 +141,11 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
-    GPT_35_TURBO = "GPT 3.5 Turbo"
-    GPT_4 = "GPT 4"
-    GEMINI = "Gemini（Google）"
-    FFM = f"FFM（{FFM_MODEL_NAME}）"
-    OLLAMA = f"Ollama（{OLLAMA_MODEL_NAME}）"
+    GPT_35_TURBO = "gpt-3.5-turbo (OpenAI)"
+    GPT_4 = "gpt-4 (OpenAI)"
+    GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
+    FFM = f"{FFM_MODEL_NAME} (FFM)"
+    OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
 
 def get_chatbot(

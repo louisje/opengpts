@@ -114,7 +114,7 @@ vstore = Redis(
 
 
 ingest_runnable = IngestRunnable(
-    text_splitter=RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=96),
+    text_splitter=RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50),
     vectorstore=vstore,
     assistant_id=None
 ).configurable_fields(
