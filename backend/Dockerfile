@@ -18,6 +18,9 @@ COPY . .
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-dev
 
+RUN playwright install-deps
+RUN playwright install
+
 RUN mv google_cloud_application_credentials.json /root/.google_cloud_application_credentials.json
 
 ENTRYPOINT [ "uvicorn", "app.server:app", "--host", "0.0.0.0" ]

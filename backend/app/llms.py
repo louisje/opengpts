@@ -58,15 +58,15 @@ def get_openai_llm(gpt_4: bool = False, azure: bool = False):
         if gpt_4:
             llm = ChatOpenAI(
                 http_client=http_client,
-                model=os.environ["gpt-4-1106-preview"],
-                temperature=0.5,
+                model=os.environ["GPT_35_TURBO_MODEL"],
+                temperature=0.1,
                 streaming=True,
             )
         else:
             llm = ChatOpenAI(
                 http_client=http_client,
-                model=os.environ["gpt-3.5-turbo-1106"],
-                temperature=0.5,
+                model=os.environ["GPT_35_TURBO_MODEL"],
+                temperature=0.1,
                 streaming=True,
             )
     else:

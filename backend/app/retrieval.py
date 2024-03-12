@@ -1,14 +1,11 @@
-from argparse import Action
-from email import charset
 from email.policy import strict
 import json
-from textwrap import indent
 from typing import List
-from unittest.mock import Base
 
 from app.tools import TOOLS, AvailableTools
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_transformers.html2text import Html2TextTransformer
+from langchain_core.documents.base import Document
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -21,6 +18,7 @@ from langgraph.graph.message import MessageGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
 from app.message_types import LiberalFunctionMessage
+from readability import Document as ReadabilityDocument
 
 
 response_prompt_template = """{instructions}
@@ -39,7 +37,7 @@ Is the following content can answer to the question? Please answer in exactly "Y
 search_prompt_template = """Here is the question:
 {question}
 
-If I want to search query on internet, how do I compose search query string? Please provide search query string itself ONLY, without any other explaination."""
+If I want to search query on internet, how do I compose search query string? Please provide search keywords ONLY, without any other explaination."""
 
 
 def get_retrieval_executor(
@@ -99,13 +97,16 @@ def get_retrieval_executor(
         msg = LiberalFunctionMessage(name="retrieval", content=response)
         return msg
     
-    async def invoke_search_full(messages):
+    def invoke_search_full(messages):
         retrieve = messages.pop()
 
         search_results = ask_to_search_google(messages)
+        if not search_results:
+            retrieve.content = [Document(page_content="No search results found.")]
+            return retrieve
 
-        loader = AsyncChromiumLoader([result.link for result in search_results])
-        htmls = loader.load()
+        loader = AsyncChromiumLoader([result["link"] for result in search_results])
+        htmls = [Document(page_content=ReadabilityDocument(html.page_content).summary()) for html in loader.load()]
         html2text = Html2TextTransformer()
         docs = html2text.transform_documents(htmls)
         retrieve.content = docs
@@ -131,16 +132,24 @@ def get_retrieval_executor(
         print("SEARCH KEYWORD: ", search_keyword)
         action = ToolInvocation(tool=TOOLS[AvailableTools.GOOGLE_SEARCH]().name, tool_input={"query":search_keyword})
 
-        return tool_executor.invoke(action)
+        results = tool_executor.invoke(action)
+        print("RESULTS: ", results) # DEBUG
+        if len(results) == 1 and results[0]["Results"]:
+            return []
+        return results
 
 
-    async def invoke_search_half(messages):
+    def invoke_search_half(messages):
         retrieve = messages.pop()
 
         search_results = ask_to_search_google(messages)
+        if not search_results:
+            retrieve.pop()
+            retrieve.pop()
+            return retrieve
 
-        loader = AsyncChromiumLoader([result.link for result in search_results[:2]])
-        htmls = loader.load()
+        loader = AsyncChromiumLoader([result["link"] for result in search_results[:2]])
+        htmls = [Document(page_content=ReadabilityDocument(html.page_content).summary()) for html in loader.load()]
         html2text = Html2TextTransformer()
         docs = html2text.transform_documents(htmls)
         if len(docs) > 0:
