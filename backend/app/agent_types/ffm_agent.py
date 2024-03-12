@@ -1,3 +1,4 @@
+import json
 import os
 
 from langchain.tools.render import render_text_description
@@ -19,6 +20,8 @@ from langgraph.graph import END
 
 from app.message_types import LiberalFunctionMessage
 
+from langchain_core.utils.function_calling import convert_to_openai_function
+
 
 from .prompt_template import template
 from .output_parser import parse_output
@@ -30,6 +33,8 @@ def get_ffm_agent_executor(
     interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver
 ):
+    functions = [convert_to_openai_function(t) for t in tools]
+
     def _get_messages(messages):
         msgs = []
         prompt = None
@@ -41,25 +46,27 @@ def get_ffm_agent_executor(
                 msgs.append(m_c)
             else:
                 msgs.append(m)
-        if tools:
-            partial_variables = {
-                "tools": render_text_description(tools),
-                "tool_names": ", ".join([t.name for t in tools]),
-                "system_message": system_message,
-            }
-            prompt = PromptTemplate.from_template(template=template,partial_variables=partial_variables)
-            return [SystemMessage(content=prompt.format())] + msgs
-
         return [SystemMessage(content=system_message)] + msgs
 
-    agent = _get_messages | llm
+    if tools:
+        llm_with_tools = llm.bind(functions=functions)
+    else:
+        llm_with_tools = llm
+    agent = _get_messages | llm_with_tools
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):
         last_message = messages[-1]
-        if isinstance(parse_output(last_message), AgentAction):
+        if "function_call" in last_message.additional_kwargs and last_message.additional_kwargs["function_call"]:
+            function_call = json.loads(last_message.additional_kwargs["function_call"])
+            last_message.additional_kwargs["function_call"] = {
+                "name": function_call["name"],
+                "arguments": json.dumps(function_call["arguments"], ensure_ascii=False),
+            }
             return "continue"
         else:
+            if "function_call" in last_message.additional_kwargs:
+                del last_message.additional_kwargs["function_call"]
             return "end"
 
     # Define the function to execute tools
@@ -68,17 +75,15 @@ def get_ffm_agent_executor(
         # we know the last message involves a function call
         last_message = messages[-1]
         # We construct an ToolInvocation from the function_call
-        _action = parse_output(last_message)
-        if not _action or not isinstance(_action, AgentAction):
-            raise ValueError("Invalid action type")
-        # We call the tool_executor and get back a response
+        function_call = last_message.additional_kwargs["function_call"]
         action = ToolInvocation(
-            tool=_action.tool,
-            tool_input=_action.tool_input,
+            tool=function_call["name"],
+            tool_input=json.loads(function_call["arguments"]),
         )
+        # We call the tool_executor and get back a response
         response = await tool_executor.ainvoke(action)
         # We use the response to create a FunctionMessage
-        function_message = FunctionMessage(content=str(response), name=action.tool)
+        function_message = FunctionMessage(content=response, name=action.tool)
         # We return a list, because this will get added to the existing list
         return function_message
 
