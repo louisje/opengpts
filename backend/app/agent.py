@@ -39,10 +39,13 @@ from langchain_core.tools import BaseTool
 OLLAMA_MODEL_NAME = os.environ["OLLAMA_MODEL"]
 FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
+GPT_35_TURBO_MODEL_NAME = os.environ["GPT_35_TURBO_MODEL"]
+GPT_4_MODEL_NAME = os.environ["GPT_4_MODEL"]
+
 
 class AgentType(str, Enum):
-    GPT_35_TURBO = "gpt-3.5-turbo (OpenAI)"
-    GPT_4 = "gpt-4 (OpenAI)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
+    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
@@ -95,6 +98,7 @@ class ConfigurableAgent(RunnableBinding):
     retrieval_description: str = RETRIEVAL_DESCRIPTION
     interrupt_before_action: bool = False
     assistant_id: Optional[str] = None
+    thread_id: Optional[str] = None
     user_id: Optional[str] = None
 
     def __init__(
@@ -104,6 +108,7 @@ class ConfigurableAgent(RunnableBinding):
         agent: AgentType = AgentType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
         retrieval_description: str = RETRIEVAL_DESCRIPTION,
         interrupt_before_action: bool = False,
         kwargs: Optional[Mapping[str, Any]] = None,
@@ -114,11 +119,13 @@ class ConfigurableAgent(RunnableBinding):
         _tools: list[BaseTool] = []
         for _tool in tools:
             if _tool == AvailableTools.RETRIEVAL:
-                if assistant_id is None:
+                if assistant_id is None or thread_id is None:
                     raise ValueError(
-                        "assistant_id must be provided if Retrieval tool is used"
+                        "Both assistant_id and thread_id must be provided if Retrieval tool is used"
                     )
-                _tools.append(get_retrieval_tool(assistant_id, retrieval_description))
+                _tools.append(
+                    get_retrieval_tool(assistant_id, thread_id, retrieval_description)
+                )
             else:
                 _returned_tools = TOOLS[_tool]()
                 if isinstance(_returned_tools, list):
@@ -141,8 +148,8 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
-    GPT_35_TURBO = "gpt-3.5-turbo (OpenAI)"
-    GPT_4 = "gpt-4 (OpenAI)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
+    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
@@ -207,6 +214,7 @@ class ConfigurableRetrieval(RunnableBinding):
     llm_type: LLMType
     system_message: str = DEFAULT_SYSTEM_MESSAGE
     assistant_id: Optional[str] = None
+    thread_id: Optional[str] = None
     user_id: Optional[str] = None
 
     def __init__(
@@ -215,12 +223,13 @@ class ConfigurableRetrieval(RunnableBinding):
         llm_type: LLMType = LLMType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: str = "",
+        thread_id: str = "",
         kwargs: Optional[Mapping[str, Any]] = None,
         config: Optional[RunnableConfig] = None,
         **others: Any,
     ) -> None:
         others.pop("bound", None)
-        retriever = get_retriever(assistant_id)
+        retriever = get_retriever(assistant_id, thread_id)
         if llm_type == LLMType.GPT_35_TURBO:
             llm = get_openai_llm()
         elif llm_type == LLMType.GPT_4:
@@ -251,6 +260,7 @@ chat_retrieval = (
         assistant_id=ConfigurableField(
             id="assistant_id", name="Assistant ID", is_shared=True
         ),
+        thread_id=ConfigurableField(id="thread_id", name="Thread ID", is_shared=True),
     )
     .with_types(input_type=Sequence[AnyMessage], output_type=Sequence[AnyMessage])
 )
@@ -263,6 +273,7 @@ agent = (
         system_message=DEFAULT_SYSTEM_MESSAGE,
         retrieval_description=RETRIEVAL_DESCRIPTION,
         assistant_id=None,
+        thread_id=None,
     )
     .configurable_fields(
         agent=ConfigurableField(id="agent_type", name="Agent Type"),
@@ -275,6 +286,7 @@ agent = (
         assistant_id=ConfigurableField(
             id="assistant_id", name="Assistant ID", is_shared=True
         ),
+        thread_id=ConfigurableField(id="thread_id", name="Thread ID", is_shared=True),
         tools=ConfigurableFieldMultiOption(
             id="tools",
             name="Tools",

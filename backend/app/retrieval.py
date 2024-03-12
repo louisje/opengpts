@@ -7,12 +7,13 @@ from typing import List
 from unittest.mock import Base
 
 from app.tools import TOOLS, AvailableTools
+from langchain_community.document_loaders.chromium import AsyncChromiumLoader
+from langchain_community.document_transformers.html2text import Html2TextTransformer
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import chain
 
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.graph import END
@@ -47,7 +48,7 @@ def get_retrieval_executor(
     system_message: str,
     checkpoint: BaseCheckpointSaver,
 ):
-    tool_executor = ToolExecutor([TOOLS[AvailableTools.WIKIPEDIA]()])
+    tool_executor = ToolExecutor([TOOLS[AvailableTools.GOOGLE_SEARCH]()])
 
     def _get_messages(messages):
         chat_history = []
@@ -100,31 +101,18 @@ def get_retrieval_executor(
     
     async def invoke_search_full(messages):
         retrieve = messages.pop()
-        chat_history: List[BaseMessage] = []
-        question = ""
-        for msg in messages:
-            if isinstance(msg, HumanMessage):
-                question = msg.content
-            if isinstance(msg, AIMessage):
-                if "function_call" not in msg.additional_kwargs:
-                    chat_history.append(msg)
-            if isinstance(msg, HumanMessage):
-                chat_history.append(msg)
 
-        chat_history.pop()
-        chat_history.append(HumanMessage(content=search_prompt_template.format(question=question)))
-        response = await llm.agenerate(messages=[chat_history])
-        search_keyword = response.generations[0][0].text
-        print("SEARCH KEYWORD: ", search_keyword)
-        action = ToolInvocation(tool=TOOLS[AvailableTools.WIKIPEDIA]().name, tool_input={"query":search_keyword})
-        result = await tool_executor.ainvoke(action)
+        search_results = ask_to_search_google(messages)
 
-        retrieve.content = result
+        loader = AsyncChromiumLoader([result.link for result in search_results])
+        htmls = loader.load()
+        html2text = Html2TextTransformer()
+        docs = html2text.transform_documents(htmls)
+        retrieve.content = docs
 
         return retrieve
 
-    async def invoke_search_half(messages):
-        retrieve = messages.pop()
+    def ask_to_search_google(messages):
         chat_history: List[BaseMessage] = []
         question = ""
         for msg in messages:
@@ -138,16 +126,27 @@ def get_retrieval_executor(
 
         chat_history.pop()
         chat_history.append(HumanMessage(content=search_prompt_template.format(question=question)))
-        response = await llm.agenerate(messages=[chat_history])
+        response = llm.generate(messages=[chat_history])
         search_keyword = response.generations[0][0].text
         print("SEARCH KEYWORD: ", search_keyword)
-        action = ToolInvocation(tool=TOOLS[AvailableTools.WIKIPEDIA]().name, tool_input={"query":search_keyword})
-        search_results = await tool_executor.ainvoke(action)
+        action = ToolInvocation(tool=TOOLS[AvailableTools.GOOGLE_SEARCH]().name, tool_input={"query":search_keyword})
 
-        if len(search_results) > 0:
-            retrieve.content[2] = search_results[0]
-        if len(search_results) > 1:
-            retrieve.content[3] = search_results[1]
+        return tool_executor.invoke(action)
+
+
+    async def invoke_search_half(messages):
+        retrieve = messages.pop()
+
+        search_results = ask_to_search_google(messages)
+
+        loader = AsyncChromiumLoader([result.link for result in search_results[:2]])
+        htmls = loader.load()
+        html2text = Html2TextTransformer()
+        docs = html2text.transform_documents(htmls)
+        if len(docs) > 0:
+            retrieve.content[2] = docs[0]
+        if len(docs) > 1:
+            retrieve.content[3] = docs[1]
 
         return retrieve
 
