@@ -1,17 +1,11 @@
 import json
-import os
 
-from langchain.tools.render import render_text_description
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.chat import ChatMessagePromptTemplate
-
-from langchain_core.agents import AgentAction
 from langchain_core.language_models.base import LanguageModelLike
+from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.system import SystemMessage
-from langchain_core.prompts.chat import SystemMessagePromptTemplate
-from langchain_core.prompts.string import StringPromptTemplate
 from langchain_core.tools import BaseTool
 from langchain_core.messages.function import FunctionMessage
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 from langgraph.graph.message import MessageGraph
@@ -20,11 +14,6 @@ from langgraph.graph import END
 
 from app.message_types import LiberalFunctionMessage
 
-from langchain_core.utils.function_calling import convert_to_openai_function
-
-
-from .prompt_template import template
-from .output_parser import parse_output
 
 def get_ffm_agent_executor(
     tools: list[BaseTool],
@@ -65,8 +54,6 @@ def get_ffm_agent_executor(
             }
             return "continue"
         else:
-            if "function_call" in last_message.additional_kwargs:
-                del last_message.additional_kwargs["function_call"]
             return "end"
 
     # Define the function to execute tools

@@ -1,11 +1,7 @@
-from email.policy import strict
 import json
 from typing import List
 
-from app.tools import TOOLS, AvailableTools
-from langchain_community.document_loaders.chromium import AsyncChromiumLoader
-from langchain_community.document_transformers.html2text import Html2TextTransformer
-from langchain_core.documents.base import Document
+from app.tools import _get_google_search_retriever
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -18,7 +14,6 @@ from langgraph.graph.message import MessageGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
 from app.message_types import LiberalFunctionMessage
-from readability import Document as ReadabilityDocument
 
 
 response_prompt_template = """{instructions}
@@ -30,14 +25,21 @@ Respond to the user using ONLY the context provided below. Do not make anything 
 ask_prompt_template = """Here is the question:
 {question}
 
-Is the following content can answer to the question? Please answer in exactly "Yes" or "No" or "Not sure" without any other explaination.
+Can the following content answer to the question? Please reply me in exactly "Yes" or "No" or "Not sure" without any other explaination.
+
+{context}"""
+
+summary_prompt_template = """Here is the question:
+{question}
+
+Summarize the following content against the question in around 500 words.
 
 {context}"""
 
 search_prompt_template = """Here is the question:
 {question}
 
-If I want to search query on internet, how do I compose search query string? Please provide search keywords ONLY, without any other explaination."""
+If I want to search query on internet, how do I compose search query string? Please provide including query string itself ONLY, no any other explaination."""
 
 
 def get_retrieval_executor(
@@ -46,7 +48,8 @@ def get_retrieval_executor(
     system_message: str,
     checkpoint: BaseCheckpointSaver,
 ):
-    tool_executor = ToolExecutor([TOOLS[AvailableTools.GOOGLE_SEARCH]()])
+    google_search_retriever = _get_google_search_retriever()
+    tool_executor = ToolExecutor([google_search_retriever])
 
     def _get_messages(messages):
         chat_history = []
@@ -98,22 +101,14 @@ def get_retrieval_executor(
         return msg
     
     def invoke_search_full(messages):
+
         retrieve = messages.pop()
-
-        search_results = ask_to_search_google(messages)
-        if not search_results:
-            retrieve.content = [Document(page_content="No search results found.")]
-            return retrieve
-
-        loader = AsyncChromiumLoader([result["link"] for result in search_results])
-        htmls = [Document(page_content=ReadabilityDocument(html.page_content).summary()) for html in loader.load()]
-        html2text = Html2TextTransformer()
-        docs = html2text.transform_documents(htmls)
-        retrieve.content = docs
+        retrieve.content = ask_to_search_google(messages)
 
         return retrieve
 
     def ask_to_search_google(messages):
+
         chat_history: List[BaseMessage] = []
         question = ""
         for msg in messages:
@@ -126,36 +121,29 @@ def get_retrieval_executor(
                 chat_history.append(msg)
 
         chat_history.pop()
-        chat_history.append(HumanMessage(content=search_prompt_template.format(question=question)))
-        response = llm.generate(messages=[chat_history])
+        response = llm.generate(messages=[chat_history+[HumanMessage(content=search_prompt_template.format(question=question))]])
         search_keyword = response.generations[0][0].text
-        print("SEARCH KEYWORD: ", search_keyword)
-        action = ToolInvocation(tool=TOOLS[AvailableTools.GOOGLE_SEARCH]().name, tool_input={"query":search_keyword})
+
+        action = ToolInvocation(tool=google_search_retriever.name, tool_input={"query":search_keyword})
 
         results = tool_executor.invoke(action)
-        print("RESULTS: ", results) # DEBUG
-        if len(results) == 1 and results[0]["Results"]:
-            return []
+
+        summaries = llm.generate(messages=[[HumanMessage(content=summary_prompt_template.format(question=question, context=result.page_content))] for result in results])
+        for i in range(len(results)):
+            results[i].page_content = summaries.generations[i][0].text
+
+        print("SUMMARIZED RESULTS: ", results) # DEBUG
+
         return results
 
 
     def invoke_search_half(messages):
+
         retrieve = messages.pop()
-
+        retrieve.content.pop()
+        retrieve.content.pop()
         search_results = ask_to_search_google(messages)
-        if not search_results:
-            retrieve.pop()
-            retrieve.pop()
-            return retrieve
-
-        loader = AsyncChromiumLoader([result["link"] for result in search_results[:2]])
-        htmls = [Document(page_content=ReadabilityDocument(html.page_content).summary()) for html in loader.load()]
-        html2text = Html2TextTransformer()
-        docs = html2text.transform_documents(htmls)
-        if len(docs) > 0:
-            retrieve.content[2] = docs[0]
-        if len(docs) > 1:
-            retrieve.content[3] = docs[1]
+        retrieve.content.extend(search_results)
 
         return retrieve
 

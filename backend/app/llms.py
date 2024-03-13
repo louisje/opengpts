@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
-from langchain_google_vertexai import ChatVertexAI, HarmCategory, HarmBlockThreshold
+from langchain_google_vertexai import ChatVertexAI
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 def get_ollama_llm(model):

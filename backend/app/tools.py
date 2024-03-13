@@ -1,21 +1,20 @@
 import os
 from enum import Enum
-from functools import lru_cache
+from functools import lru_cache, partial
+from typing import Any, List
 
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
-from langchain_community.agent_toolkits.connery import ConneryToolkit
 from langchain_community.retrievers import (
     KayAiRetriever,
     PubMedRetriever,
     WikipediaRetriever,
 )
 from langchain_community.retrievers.you import YouRetriever
-from langchain_community.tools.google_search import GoogleSearchResults
+from langchain_community.tools.google_search import GoogleSearchResults, GoogleSearchRetriever
 from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
 from langchain_community.tools.openweathermap import OpenWeatherMapQueryRun
-from langchain_community.tools.connery import ConneryService
 from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
@@ -23,6 +22,10 @@ from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 from langchain_community.vectorstores.redis import RedisFilter
 
+from langchain_core.documents.base import Document
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.tools import Tool
+from langchain_experimental.cpal.templates.univariate import query
 from langchain_experimental.tools import PythonREPLTool
 
 from app.upload import vstore
@@ -39,6 +42,9 @@ class ArxivInput(BaseModel):
 
 class PythonREPLInput(BaseModel):
     query: str = Field(description="python command to run")
+
+class GoogleSearchRetrieverInput(BaseModel):
+    query: str = Field(description="search query to look up")
 
 class GoogleSearchInput(BaseModel):
     query: str = Field(description="search query to look up")
@@ -73,6 +79,28 @@ def get_retrieval_tool(assistant_id: str, thread_id: str, description: str):
 @lru_cache(maxsize=1)
 def _get_google_search():
     return GoogleSearchResults(args_schema=GoogleSearchInput, api_wrapper=GoogleSearchAPIWrapper(search_engine=None))
+
+@lru_cache(maxsize=1)
+def _get_google_search_retriever():
+    retriever: BaseRetriever = GoogleSearchRetriever(api_wrapper=GoogleSearchAPIWrapper(search_engine=None))
+    def _get_relevant_documents(
+        query: str,
+        retriever: BaseRetriever,
+    ) -> List[Document]:
+
+        return retriever.get_relevant_documents(query)
+
+    func = partial(
+        _get_relevant_documents,
+        retriever=retriever,
+    )
+    return Tool(
+        name=retriever.name,
+        description=retriever.description,
+        func=func,
+        args_schema=GoogleSearchRetrieverInput,
+    )
+
 
 
 @lru_cache(maxsize=1)

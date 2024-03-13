@@ -49,7 +49,6 @@ httpx = { version = "0.26.0", extras = ["socks"] }
 unstructured = {extras = ["doc", "docx"], version = "^0.12.5"}
 playwright = "^1.42.0"
 html2text = "^2024.2.26"
-readability-lxml = "^0.8.1"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"
