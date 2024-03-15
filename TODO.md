@@ -7,3 +7,4 @@
 * [ ] APIChain (Auto-AutoTest)
 * [ ] FFM function call
 * [ ] Anthropic API Key (claude 3 Opus)
+* [ ] LangGraph:『Multi-Agent Workflows』
