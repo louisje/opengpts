@@ -16,7 +16,6 @@ def get_ollama_llm(model):
         base_url="http://ollama:11434",
         model=model,
         stop=["[INST]","[/INST]","<start_of_turn>","<end_of_turn>"],
-        streaming=True,
         num_gpu=0,
         temperature=0.5,
         top_k=50,
@@ -29,7 +28,7 @@ def get_ffm_llm(model: str):
     llm = ChatFFM(
         model=model,
         max_new_tokens=1024,
-        temperature=0.5,
+        temperature=0.1,
         top_k=50,
         top_p=1.0,
         frequence_penalty=1.0,

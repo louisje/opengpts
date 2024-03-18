@@ -1,8 +1,12 @@
 import json
 from typing import List
 
-from app.tools import _get_google_search_retriever
+from app import stream
+from app.tools import _get_google_search
 
+from langchain_community.document_loaders.chromium import AsyncChromiumLoader
+from langchain_community.document_transformers.html2text import Html2TextTransformer
+from langchain_core.documents.base import Document
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
@@ -22,24 +26,33 @@ Respond to the user using ONLY the context provided below. Do not make anything 
 
 {context}"""
 
-ask_prompt_template = """Here is the question:
+ask_prompt_template = """This is the question:
 {question}
 
-Can the following content answer to the question? Please reply me in exactly "Yes" or "No" or "Not sure" without any other explaination.
+Can the following content answer to the question? Please reply me in only this json format, no other description.
+{{
+    "answer": "YOUR ANSWER HERE"
+}}
+The answer can ONLY be `Yes`, `No`, or `Not sure`.
 
+Here is the content:
 {context}"""
 
-summary_prompt_template = """Here is the question:
+summary_prompt_template = """This is the question:
 {question}
 
 Summarize the following content against the question in around 500 words.
 
+Here is the content:
 {context}"""
 
-search_prompt_template = """Here is the question:
+search_prompt_template = """This is the question:
 {question}
 
-If I want to search query on internet, how do I compose search query string? Please provide including query string itself ONLY, no any other explaination."""
+If I want to search on internet, how do I compose search keyword? Please provide in this json format, no any other explaination.
+{{
+    "answer": "YOUR ANSWER HERE"
+}}"""
 
 
 def get_retrieval_executor(
@@ -48,8 +61,8 @@ def get_retrieval_executor(
     system_message: str,
     checkpoint: BaseCheckpointSaver,
 ):
-    google_search_retriever = _get_google_search_retriever()
-    tool_executor = ToolExecutor([google_search_retriever])
+    google_search_results = _get_google_search()
+    tool_executor = ToolExecutor([google_search_results])
 
     def _get_messages(messages):
         chat_history = []
@@ -88,9 +101,14 @@ def get_retrieval_executor(
                 question = msg.content
         docs = messages[-1].content
         content = "\n...\n".join([doc.page_content for doc in docs])
-        response = llm.invoke(input=ask_prompt_template.format(question=question, context=content))
+        response = llm.invoke(input=ask_prompt_template.format(question=question, context=content), stream=False)
         answer = str(response.content)
         print("ANSWER: ", answer) # DEBUG
+        try:
+            json_load = json.loads(answer)
+            answer = json_load["answer"]
+        except:
+            pass
         return answer
 
     async def retrieve(messages):
@@ -103,7 +121,12 @@ def get_retrieval_executor(
     def invoke_search_full(messages):
 
         retrieve = messages.pop()
-        retrieve.content = ask_to_search_google(messages)
+        question, search_results = ask_to_search_google(messages)
+        results = Html2TextTransformer().transform_documents(AsyncChromiumLoader([result["link"] for result in search_results]).load())
+        summary_results = llm.generate(messages=[[HumanMessage(content=summary_prompt_template.format(question=question, context=result.page_content))] for result in results], stream=False)
+        for i in range(len(results)):
+            results[i].page_content = summary_results.generations[i][0].text
+        retrieve.content = results
 
         return retrieve
 
@@ -115,26 +138,24 @@ def get_retrieval_executor(
             if isinstance(msg, HumanMessage):
                 question = msg.content
             if isinstance(msg, AIMessage):
-                if "function_call" not in msg.additional_kwargs:
+                if "function_call" not in msg.additional_kwargs or not msg.additional_kwargs["function_call"]:
                     chat_history.append(msg)
             if isinstance(msg, HumanMessage):
                 chat_history.append(msg)
 
         chat_history.pop()
-        response = llm.generate(messages=[chat_history+[HumanMessage(content=search_prompt_template.format(question=question))]])
-        search_keyword = response.generations[0][0].text
+        response = llm.generate(messages=[chat_history+[HumanMessage(content=search_prompt_template.format(question=question))]], stream=False)
+        answer = response.generations[0][0].text
+        print("ANSWER: ", answer) # DEBUG
+        try:
+            json_load = json.loads(answer)
+            answer = json_load["answer"]
+        except:
+            pass
 
-        action = ToolInvocation(tool=google_search_retriever.name, tool_input={"query":search_keyword})
+        action = ToolInvocation(tool=google_search_results.name, tool_input={"query":answer})
 
-        results = tool_executor.invoke(action)
-
-        summaries = llm.generate(messages=[[HumanMessage(content=summary_prompt_template.format(question=question, context=result.page_content))] for result in results])
-        for i in range(len(results)):
-            results[i].page_content = summaries.generations[i][0].text
-
-        print("SUMMARIZED RESULTS: ", results) # DEBUG
-
-        return results
+        return question, json.loads(tool_executor.invoke(action))
 
 
     def invoke_search_half(messages):
@@ -142,8 +163,12 @@ def get_retrieval_executor(
         retrieve = messages.pop()
         retrieve.content.pop()
         retrieve.content.pop()
-        search_results = ask_to_search_google(messages)
-        retrieve.content.extend(search_results)
+        question, search_results = ask_to_search_google(messages)
+        results = Html2TextTransformer().transform_documents(AsyncChromiumLoader([result["link"] for result in search_results[:2]]).load())
+        summary_results = llm.generate(messages=[[HumanMessage(content=summary_prompt_template.format(question=question, context=result.page_content))] for result in results], stream=False)
+        for i in range(len(results)):
+            results[i].page_content = summary_results.generations[i][0].text
+        retrieve.content.extend(results)
 
         return retrieve
 

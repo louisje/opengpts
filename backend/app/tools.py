@@ -78,7 +78,7 @@ def get_retrieval_tool(assistant_id: str, thread_id: str, description: str):
 
 @lru_cache(maxsize=1)
 def _get_google_search():
-    return GoogleSearchResults(args_schema=GoogleSearchInput, api_wrapper=GoogleSearchAPIWrapper(search_engine=None))
+    return GoogleSearchResults(args_schema=GoogleSearchInput, api_wrapper=GoogleSearchAPIWrapper(search_engine=None), num_results=4)
 
 @lru_cache(maxsize=1)
 def _get_google_search_retriever():
