@@ -1,7 +1,8 @@
 import os
+
 from enum import Enum
 from functools import lru_cache, partial
-from typing import Any, List
+from typing import Optional,  List
 
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.retriever import create_retriever_tool
@@ -15,7 +16,12 @@ from langchain_community.tools.google_search import GoogleSearchResults, GoogleS
 from langchain_community.tools.ddg_search import DuckDuckGoSearchRun
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
 from langchain_community.tools.openweathermap import OpenWeatherMapQueryRun
-from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
+from langchain_community.tools.tavily_search import (
+    TavilyAnswer as _TavilyAnswer,
+)
+from langchain_community.tools.tavily_search import (
+    TavilySearchResults,
+)
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
@@ -27,6 +33,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools import Tool
 from langchain_experimental.cpal.templates.univariate import query
 from langchain_experimental.tools import PythonREPLTool
+from typing_extensions import TypedDict
 
 from app.upload import vstore
 from langchain.pydantic_v1 import SecretStr
@@ -51,6 +58,97 @@ class GoogleSearchInput(BaseModel):
 
 class OpenWeatherMapInput(BaseModel):
     location: str = Field(description="location to query")
+
+
+class AvailableTools(str, Enum):
+    DDG_SEARCH = "ddg_search"
+    TAVILY = "search_tavily"
+    TAVILY_ANSWER = "search_tavily_answer"
+    RETRIEVAL = "retrieval"
+    ARXIV = "arxiv"
+    YOU_SEARCH = "you_search"
+    WIKIPEDIA = "wikipedia"
+    OPEN_WEATHER_MAP = "Open Weather Map"
+    PYTHON_REPL_TOOL = "Python REPL Tool"
+    GOOGLE_SEARCH = "Google Search"
+
+class ToolConfig(TypedDict):
+    ...
+
+
+class BaseTool(BaseModel):
+    type: AvailableTools
+    name: Optional[str]
+    description: Optional[str]
+    config: Optional[ToolConfig]
+    multi_use: Optional[bool] = False
+
+
+class ActionServerConfig(ToolConfig):
+    url: str
+    api_key: str
+
+
+class DDGSearch(BaseTool):
+    type: AvailableTools = Field(AvailableTools.DDG_SEARCH, const=True)
+    name: str = Field("DuckDuckGo Search", const=True)
+    description: str = Field(
+        "Search the web with [DuckDuckGo](https://pypi.org/project/duckduckgo-search/).",
+        const=True,
+    )
+
+
+class Arxiv(BaseTool):
+    type: AvailableTools = Field(AvailableTools.ARXIV, const=True)
+    name: str = Field("Arxiv", const=True)
+    description: str = Field("Searches [Arxiv](https://arxiv.org/).", const=True)
+
+
+class YouSearch(BaseTool):
+    type: AvailableTools = Field(AvailableTools.YOU_SEARCH, const=True)
+    name: str = Field("You.com Search", const=True)
+    description: str = Field(
+        "Uses [You.com](https://you.com/) search, optimized responses for LLMs.",
+        const=True,
+    )
+
+
+class Wikipedia(BaseTool):
+    type: AvailableTools = Field(AvailableTools.WIKIPEDIA, const=True)
+    name: str = Field("Wikipedia", const=True)
+    description: str = Field(
+        "Searches [Wikipedia](https://pypi.org/project/wikipedia/).", const=True
+    )
+
+
+class Tavily(BaseTool):
+    type: AvailableTools = Field(AvailableTools.TAVILY, const=True)
+    name: str = Field("Search (Tavily)", const=True)
+    description: str = Field(
+        (
+            "Uses the [Tavily](https://app.tavily.com/) search engine. "
+            "Includes sources in the response."
+        ),
+        const=True,
+    )
+
+
+class TavilyAnswer(BaseTool):
+    type: AvailableTools = Field(AvailableTools.TAVILY_ANSWER, const=True)
+    name: str = Field("Search (short answer, Tavily)", const=True)
+    description: str = Field(
+        (
+            "Uses the [Tavily](https://app.tavily.com/) search engine. "
+            "This returns only the answer, no supporting evidence."
+        ),
+        const=True,
+    )
+
+
+class Retrieval(BaseTool):
+    type: AvailableTools = Field(AvailableTools.RETRIEVAL, const=True)
+    name: str = Field("Retrieval", const=True)
+    description: str = Field("Look up information in uploaded files.", const=True)
 
 
 RETRIEVAL_DESCRIPTION = """Can be used to look up information that was uploaded to this assistant.
@@ -170,21 +268,7 @@ def _get_python_repl_tool():
 @lru_cache(maxsize=1)
 def _get_tavily_answer():
     tavily_search = TavilySearchAPIWrapper(tavily_api_key=SecretStr(os.environ["TAVILY_API_KEY"]))
-    return TavilyAnswer(api_wrapper=tavily_search)
-
-
-
-class AvailableTools(str, Enum):
-    CONNERY = '"AI Action Runner" by Connery'
-    DDG_SEARCH = "DDG Search"
-    TAVILY = "Search (Tavily)"
-    TAVILY_ANSWER = "Search (short answer, Tavily)"
-    RETRIEVAL = "Retrieval"
-    ARXIV = "Arxiv"
-    WIKIPEDIA = "Wikipedia"
-    OPEN_WEATHER_MAP = "Open Weather Map"
-    PYTHON_REPL_TOOL = "Python REPL Tool"
-    GOOGLE_SEARCH = "Google Search"
+    return _TavilyAnswer(api_wrapper=tavily_search)
 
 
 TOOLS = {
@@ -197,12 +281,3 @@ TOOLS = {
     AvailableTools.PYTHON_REPL_TOOL: _get_python_repl_tool,
     AvailableTools.GOOGLE_SEARCH: _get_google_search,
 }
-
-TOOL_OPTIONS = {e.value: e.value for e in AvailableTools}
-
-# Check if dependencies and env vars for each tool are available
-for k, v in TOOLS.items():
-    # Connery requires env vars to be valid even if the tool isn't used,
-    # so we'll skip the check for it
-    if k != AvailableTools.CONNERY:
-        v()

@@ -1,7 +1,4 @@
-__pycache__/
 .envrc
-.env
-*.swp
 ui
 packages/langchain-google
 packages/langchain

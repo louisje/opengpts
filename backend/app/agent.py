@@ -1,13 +1,12 @@
 from enum import Enum
-import json
 import os
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, Union
 
+from app.agent_types.xml_agent import get_xml_agent_executor
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AnyMessage
 from langchain_core.runnables import (
     ConfigurableField,
-    ConfigurableFieldMultiOption,
     RunnableBinding,
 )
 from langgraph.checkpoint import CheckpointAt
@@ -20,16 +19,24 @@ from app.agent_types.ollama_agent import get_ollama_agent_executor
 from app.checkpoint import RedisCheckpoint
 from app.retrieval import get_retrieval_executor
 from app.llms import (
+    get_anthropic_llm,
     get_google_llm,
+    get_mixtral_fireworks,
     get_openai_llm,
     get_ffm_llm,
     get_ollama_llm,
 )
 from app.tools import (
     RETRIEVAL_DESCRIPTION,
-    TOOL_OPTIONS,
     TOOLS,
+    Arxiv,
     AvailableTools,
+    DDGSearch,
+    Retrieval,
+    Tavily,
+    TavilyAnswer,
+    Wikipedia,
+    YouSearch,
     get_retrieval_tool,
     get_retriever,
 )
@@ -41,12 +48,25 @@ FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
 GPT_35_TURBO_MODEL_NAME = os.environ["GPT_35_TURBO_MODEL"]
 GPT_4_MODEL_NAME = os.environ["GPT_4_MODEL"]
+MIXTRAL_MODEL_NAME = os.environ["MIXTRAL_MODEL"]
+CLAUDE_MODEL_NAME = os.environ["CLAUDE_MODEL"]
 
+Tool = Union[
+    DDGSearch,
+    Arxiv,
+    YouSearch,
+    Wikipedia,
+    Tavily,
+    TavilyAnswer,
+    Retrieval,
+]
 
 class AgentType(str, Enum):
     GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
     GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
+    MIXTRAL = f"{MIXTRAL_MODEL_NAME} (Mixtral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
@@ -72,11 +92,21 @@ def get_agent_executor(
         return get_openai_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
+    elif agent == AgentType.CLAUDE:
+        llm = get_anthropic_llm()
+        return get_xml_agent_executor(
+             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
     elif agent == AgentType.GEMINI:
         llm = get_google_llm()
         return get_google_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
+    # elif agent == AgentType.MIXTRAL:
+    #     llm = get_mixtral_fireworks()
+    #     return get_mixtral_agent_executor(
+    #         tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+    #     )
     elif agent == AgentType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
         return get_ffm_agent_executor(
@@ -92,7 +122,7 @@ def get_agent_executor(
 
 
 class ConfigurableAgent(RunnableBinding):
-    tools: Sequence[str]
+    tools: Sequence[Tool]
     agent: AgentType
     system_message: str = DEFAULT_SYSTEM_MESSAGE
     retrieval_description: str = RETRIEVAL_DESCRIPTION
@@ -104,7 +134,7 @@ class ConfigurableAgent(RunnableBinding):
     def __init__(
         self,
         *,
-        tools: Sequence[AvailableTools],
+        tools: Sequence[Tool],
         agent: AgentType = AgentType.GPT_35_TURBO,
         system_message: str = DEFAULT_SYSTEM_MESSAGE,
         assistant_id: Optional[str] = None,
@@ -118,7 +148,7 @@ class ConfigurableAgent(RunnableBinding):
         others.pop("bound", None)
         _tools: list[BaseTool] = []
         for _tool in tools:
-            if _tool == AvailableTools.RETRIEVAL:
+            if _tool.type == AvailableTools.RETRIEVAL:
                 if assistant_id is None or thread_id is None:
                     raise ValueError(
                         "Both assistant_id and thread_id must be provided if Retrieval tool is used"
@@ -127,7 +157,8 @@ class ConfigurableAgent(RunnableBinding):
                     get_retrieval_tool(assistant_id, thread_id, retrieval_description)
                 )
             else:
-                _returned_tools = TOOLS[_tool]()
+                tool_config = _tool.config
+                _returned_tools = TOOLS[_tool.type](**tool_config)
                 if isinstance(_returned_tools, list):
                     _tools.extend(_returned_tools)
                 else:
@@ -150,7 +181,9 @@ class ConfigurableAgent(RunnableBinding):
 class LLMType(str, Enum):
     GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
     GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
+    MIXTRAL = f"{MIXTRAL_MODEL_NAME} (Mixtral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
@@ -163,8 +196,12 @@ def get_chatbot(
         llm = get_openai_llm()
     elif llm_type == LLMType.GPT_4:
         llm = get_openai_llm(gpt_4=True)
+    elif llm_type == LLMType.CLAUDE:
+        llm = get_anthropic_llm()
     elif llm_type == LLMType.GEMINI:
         llm = get_google_llm()
+    elif llm_type == LLMType.MIXTRAL:
+        llm = get_mixtral_fireworks()
     elif llm_type == LLMType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
     elif llm_type == LLMType.OLLAMA:
@@ -234,8 +271,12 @@ class ConfigurableRetrieval(RunnableBinding):
             llm = get_openai_llm()
         elif llm_type == LLMType.GPT_4:
             llm = get_openai_llm(gpt_4=True)
+        elif llm_type == LLMType.CLAUDE:
+            llm = get_anthropic_llm()
         elif llm_type == LLMType.GEMINI:
             llm = get_google_llm()
+        elif llm_type == LLMType.MIXTRAL:
+            llm = get_mixtral_fireworks()
         elif llm_type == LLMType.FFM:
             llm = get_ffm_llm(model=FFM_MODEL_NAME)
         elif llm_type == LLMType.OLLAMA:
@@ -287,12 +328,7 @@ agent = (
             id="assistant_id", name="Assistant ID", is_shared=True
         ),
         thread_id=ConfigurableField(id="thread_id", name="Thread ID", is_shared=True),
-        tools=ConfigurableFieldMultiOption(
-            id="tools",
-            name="Tools",
-            options=TOOL_OPTIONS,
-            default=[],
-        ),
+        tools=ConfigurableField(id="tools", name="Tools"),
         retrieval_description=ConfigurableField(
             id="retrieval_description", name="Retrieval Description"
         ),

@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Path, Query
@@ -26,7 +26,7 @@ AssistantID = Annotated[str, Path(description="The ID of the assistant.")]
 @router.get("/")
 def list_assistants(opengpts_user_id: OpengptsUserId) -> List[AssistantWithoutUserId]:
     """List all assistants for the current user."""
-    return storage.list_assistants(opengpts_user_id)
+    return [AssistantWithoutUserId(**assistant) for assistant in storage.list_assistants(opengpts_user_id)]
 
 
 @router.get("/public/")
@@ -36,9 +36,11 @@ def list_public_assistants(
     ] = None,
 ) -> List[AssistantWithoutUserId]:
     """List all public assistants."""
-    return storage.list_public_assistants(
-        FEATURED_PUBLIC_ASSISTANTS + ([shared_id] if shared_id else [])
-    )
+    return [
+        AssistantWithoutUserId(**assistant)
+            for assistant
+            in storage.list_public_assistants(FEATURED_PUBLIC_ASSISTANTS + ([shared_id] if shared_id else []))
+    ]
 
 
 @router.get("/{aid}")
@@ -50,7 +52,7 @@ def get_asistant(
     assistant = storage.get_assistant(opengpts_user_id, aid)
     if not assistant:
         raise HTTPException(status_code=404, detail="Assistant not found")
-    return assistant
+    return Assistant(**assistant)
 
 
 @router.post("")

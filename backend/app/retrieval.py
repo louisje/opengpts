@@ -1,7 +1,6 @@
 import json
 from typing import List
 
-from app import stream
 from app.tools import _get_google_search
 
 from langchain_community.document_loaders.chromium import AsyncChromiumLoader
