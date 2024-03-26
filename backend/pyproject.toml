@@ -29,7 +29,7 @@ pyowm = "^3.3.0"
 google-api-python-client = "^2.115.0"
 langchain = {path = "packages/langchain/libs/langchain", develop = true}
 langgraph = {path = "packages/langgraph", develop = true}
-pydantic = ">=1,<2"
+pydantic = "<2.0"
 python-magic = "^0.4.27"
 langchain-openai = {path = "packages/langchain/libs/partners/openai", develop = true}
 beautifulsoup4 = "^4.12.3"
@@ -50,6 +50,9 @@ unstructured = {extras = ["doc", "docx"], version = "^0.12.5"}
 playwright = "^1.42.0"
 html2text = "^2024.2.26"
 google-cloud-aiplatform = "^1.44.0"
+pgvector = "^0.2.5"
+psycopg2-binary = "^2.9.9"
+asyncpg = "^0.29.0"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

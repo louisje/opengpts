@@ -76,7 +76,7 @@ async def astream_messages(
             yield last_messages_list
 
 
-def map_chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
+def map_chunk_to_msg(chunk: Any) -> BaseMessage:
     if not isinstance(chunk, BaseMessageChunk):
         return chunk
     args = {k: v for k, v in chunk.__dict__.items() if k != "type"}

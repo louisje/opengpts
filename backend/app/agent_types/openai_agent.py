@@ -5,7 +5,7 @@ from langchain.tools.render import format_tool_to_openai_tool
 from langchain_core.language_models.base import LanguageModelLike
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.checkpoint import BaseCheckpointSaver
-from langgraph.graph import END
+from langgraph.graph import END, CompiledGraph
 from langgraph.graph.message import MessageGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
@@ -18,7 +18,7 @@ def get_openai_agent_executor(
     system_message: str,
     interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver,
-):
+) -> CompiledGraph:
     async def _get_messages(messages):
         msgs = []
         for m in messages:
@@ -119,7 +119,7 @@ def get_openai_agent_executor(
     # Finally, we compile it!
     # This compiles it into a LangChain Runnable,
     # meaning you can use it as you would any other runnable
-    app = workflow.compile(checkpointer=checkpoint)
-    if interrupt_before_action:
-        app.interrupt = ["action:inbox"]
-    return app
+    return workflow.compile(
+        checkpointer=checkpoint,
+        interrupt_before=["action"] if interrupt_before_action else None,
+    )

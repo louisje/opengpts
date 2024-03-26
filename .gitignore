@@ -5,6 +5,8 @@
 nginx/ssl
 /ollama
 /ollama-webui
+.env.gcp.yaml
+postgres-volume/
 redis-volume/
 .venv/
 backend/ui

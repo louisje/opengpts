@@ -26,7 +26,6 @@ from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
-from langchain_community.vectorstores.redis import RedisFilter
 
 from langchain_core.documents.base import Document
 from langchain_core.retrievers import BaseRetriever
@@ -120,6 +119,10 @@ class Wikipedia(BaseTool):
         "Searches [Wikipedia](https://pypi.org/project/wikipedia/).", const=True
     )
 
+class GoogleSearch(BaseTool):
+    type: AvailableTools = Field(AvailableTools.GOOGLE_SEARCH, const=True)
+    name: str = Field("Google Search", const=True)
+    description: str = Field("Search the web with [Google Search](https://www.google.com/).", const=True)
 
 class Tavily(BaseTool):
     type: AvailableTools = Field(AvailableTools.TAVILY, const=True)
@@ -158,10 +161,7 @@ If the user asks a vague question, they are likely meaning to look up info from 
 
 def get_retriever(assistant_id: str, thread_id: str):
     return vstore.as_retriever(
-        search_kwargs={
-            "filter": (RedisFilter.tag("namespace") == assistant_id)
-            | (RedisFilter.tag("namespace") == thread_id)
-        }
+        search_kwargs={"filter": {"namespace": {"$in": [assistant_id, thread_id]}}}
     )
 
 

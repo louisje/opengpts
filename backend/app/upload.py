@@ -11,9 +11,9 @@ from __future__ import annotations
 import os
 from typing import Any, BinaryIO, List, Optional
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
-from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.vectorstores.redis import Redis
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
+from langchain_community.document_loaders.blob_loaders.schema import Blob
+from langchain_community.vectorstores.pgvector import PGVector
 from langchain_core.runnables import (
     ConfigurableField,
     RunnableConfig,
@@ -70,7 +70,7 @@ class IngestRunnable(RunnableSerializable[BinaryIO, List[str]]):
         arbitrary_types_allowed = True
 
     @property
-    def namespace(self) -> str:
+    def namespace(self) -> str | None:
         if (self.assistant_id is None and self.thread_id is None) or (
             self.assistant_id is not None and self.thread_id is not None
         ):
@@ -102,26 +102,31 @@ class IngestRunnable(RunnableSerializable[BinaryIO, List[str]]):
                     MIMETYPE_BASED_PARSER,
                     self.text_splitter,
                     self.vectorstore,
-                    self.namespace,
+                    str(self.namespace),
                 )
             )
         return ids
 
 
-index_schema = "redis_index_schema.yaml"
-
-vstore = Redis(
-    redis_url=os.environ["REDIS_URL"],
-    index_name="opengpts",
-    embedding=OpenAIEmbeddings(),
-    index_schema=index_schema,
+PG_CONNECTION_STRING = PGVector.connection_string_from_db_params(
+    driver="psycopg2",
+    host=os.environ["POSTGRES_HOST"],
+    port=int(os.environ["POSTGRES_PORT"]),
+    database=os.environ["POSTGRES_DB"],
+    user=os.environ["POSTGRES_USER"],
+    password=os.environ["POSTGRES_PASSWORD"],
+)
+vstore = PGVector(
+    connection_string=PG_CONNECTION_STRING,
+    embedding_function=OpenAIEmbeddings(),
 )
 
 
 ingest_runnable = IngestRunnable(
-    text_splitter=RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50),
+    text_splitter=RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200),
     vectorstore=vstore,
-    assistant_id=None
+    assistant_id=None,
+    thread_id=None,
 ).configurable_fields(
     assistant_id=ConfigurableField(
         id="assistant_id",

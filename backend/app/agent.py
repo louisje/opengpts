@@ -3,6 +3,7 @@ import os
 from typing import Any, Mapping, Optional, Sequence, Union
 
 from app.agent_types.xml_agent import get_xml_agent_executor
+from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AnyMessage
 from langchain_core.runnables import (
@@ -16,7 +17,7 @@ from app.agent_types.openai_agent import get_openai_agent_executor
 from app.agent_types.ffm_agent import get_ffm_agent_executor
 from app.chatbot import get_chatbot_executor
 from app.agent_types.ollama_agent import get_ollama_agent_executor
-from app.checkpoint import RedisCheckpoint
+from app.checkpoint import PostgresCheckpoint
 from app.retrieval import get_retrieval_executor
 from app.llms import (
     get_anthropic_llm,
@@ -36,7 +37,7 @@ from app.tools import (
     Tavily,
     TavilyAnswer,
     Wikipedia,
-    YouSearch,
+    GoogleSearch,
     get_retrieval_tool,
     get_retriever,
 )
@@ -48,17 +49,17 @@ FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
 GPT_35_TURBO_MODEL_NAME = os.environ["GPT_35_TURBO_MODEL"]
 GPT_4_MODEL_NAME = os.environ["GPT_4_MODEL"]
-MIXTRAL_MODEL_NAME = os.environ["MIXTRAL_MODEL"]
+MISTRAL_MODEL_NAME = os.environ["MISTRAL_MODEL"]
 CLAUDE_MODEL_NAME = os.environ["CLAUDE_MODEL"]
 
 Tool = Union[
     DDGSearch,
     Arxiv,
-    YouSearch,
     Wikipedia,
     Tavily,
     TavilyAnswer,
     Retrieval,
+    GoogleSearch,
 ]
 
 class AgentType(str, Enum):
@@ -66,14 +67,14 @@ class AgentType(str, Enum):
     GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
-    MIXTRAL = f"{MIXTRAL_MODEL_NAME} (Mixtral)"
+    MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
 
-CHECKPOINTER = RedisCheckpoint(at=CheckpointAt.END_OF_STEP)
+CHECKPOINTER = PostgresCheckpoint(at=CheckpointAt.END_OF_STEP)
 
 
 def get_agent_executor(
@@ -81,7 +82,7 @@ def get_agent_executor(
     agent: AgentType,
     system_message: str,
     interrupt_before_action: bool,
-):
+) -> CompiledGraph:
     if agent == AgentType.GPT_35_TURBO:
         llm = get_openai_llm()
         return get_openai_agent_executor(
@@ -102,7 +103,7 @@ def get_agent_executor(
         return get_google_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
-    # elif agent == AgentType.MIXTRAL:
+    # elif agent == AgentType.MISTRAL:
     #     llm = get_mixtral_fireworks()
     #     return get_mixtral_agent_executor(
     #         tools, llm, system_message, interrupt_before_action, CHECKPOINTER
@@ -146,9 +147,9 @@ class ConfigurableAgent(RunnableBinding):
         **others: Any,
     ) -> None:
         others.pop("bound", None)
-        _tools: list[BaseTool] = []
+        _tools = []
         for _tool in tools:
-            if _tool.type == AvailableTools.RETRIEVAL:
+            if _tool["type"] == AvailableTools.RETRIEVAL:
                 if assistant_id is None or thread_id is None:
                     raise ValueError(
                         "Both assistant_id and thread_id must be provided if Retrieval tool is used"
@@ -157,8 +158,8 @@ class ConfigurableAgent(RunnableBinding):
                     get_retrieval_tool(assistant_id, thread_id, retrieval_description)
                 )
             else:
-                tool_config = _tool.config
-                _returned_tools = TOOLS[_tool.type](**tool_config)
+                tool_config = _tool["config"]
+                _returned_tools = TOOLS[_tool["type"]](**tool_config)
                 if isinstance(_returned_tools, list):
                     _tools.extend(_returned_tools)
                 else:
@@ -183,7 +184,7 @@ class LLMType(str, Enum):
     GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
-    MIXTRAL = f"{MIXTRAL_MODEL_NAME} (Mixtral)"
+    MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
@@ -200,7 +201,7 @@ def get_chatbot(
         llm = get_anthropic_llm()
     elif llm_type == LLMType.GEMINI:
         llm = get_google_llm()
-    elif llm_type == LLMType.MIXTRAL:
+    elif llm_type == LLMType.MISTRAL:
         llm = get_mixtral_fireworks()
     elif llm_type == LLMType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
@@ -275,7 +276,7 @@ class ConfigurableRetrieval(RunnableBinding):
             llm = get_anthropic_llm()
         elif llm_type == LLMType.GEMINI:
             llm = get_google_llm()
-        elif llm_type == LLMType.MIXTRAL:
+        elif llm_type == LLMType.MISTRAL:
             llm = get_mixtral_fireworks()
         elif llm_type == LLMType.FFM:
             llm = get_ffm_llm(model=FFM_MODEL_NAME)

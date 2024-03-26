@@ -13,7 +13,7 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 from langgraph.graph.message import MessageGraph
-from langgraph.graph import END
+from langgraph.graph import END, CompiledGraph
 
 from app.message_types import LiberalFunctionMessage
 
@@ -25,7 +25,7 @@ def get_ollama_agent_executor(
     system_message: str,
     interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver
-):
+) -> CompiledGraph:
     functions = [convert_to_openai_function(t) for t in tools]
 
     def _get_messages(messages):
@@ -46,7 +46,7 @@ def get_ollama_agent_executor(
         if not isinstance(msg.content, str):
             raise ValueError("OllamaFunctions does not support non-string output.")
         try:
-            print([msg.content]) # Qoo
+            print([msg.content]) # DEBUG
             parsed_chat_result = json.loads(msg.content)
         except json.JSONDecodeError:
             print("Unable to parse a function call from OllamaFunctions output.")
@@ -77,8 +77,12 @@ def get_ollama_agent_executor(
             },
         )
 
-    llm_with_tools = llm.bind(functions=functions)
-    agent = _get_messages | llm_with_tools | _parse_function
+    if functions:
+        llm_with_tools = llm.bind(functions=functions)
+        agent = _get_messages | llm_with_tools | _parse_function
+    else:
+        agent = _get_messages | llm
+
     tool_executor = ToolExecutor(tools)
 
     def should_continue(messages):
