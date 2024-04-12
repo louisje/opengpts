@@ -19,7 +19,7 @@ fi
 
 if [ "$1" = "--all" ]; then
     shift
-    docker compose up -d --build
+    docker compose up -d --build --remove-orphans
     exit
 elif [ -z "$1" ]; then
     docker compose up -d --build backend

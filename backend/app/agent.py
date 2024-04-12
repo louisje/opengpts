@@ -104,17 +104,17 @@ def get_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     # elif agent == AgentType.MISTRAL:
-    #     llm = get_mixtral_fireworks()
-    #     return get_mixtral_agent_executor(
-    #         tools, llm, system_message, interrupt_before_action, CHECKPOINTER
-    #     )
+    #    llm = get_mixtral_fireworks()
+    #    return get_mixtral_agent_executor(
+    #        tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+    #    )
     elif agent == AgentType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
         return get_ffm_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.OLLAMA:
-        llm = get_ollama_llm(model=OLLAMA_MODEL_NAME)
+        llm = get_ollama_llm()
         return get_ollama_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
@@ -149,7 +149,7 @@ class ConfigurableAgent(RunnableBinding):
         others.pop("bound", None)
         _tools = []
         for _tool in tools:
-            if _tool["type"] == AvailableTools.RETRIEVAL:
+            if _tool["type"] == AvailableTools.RETRIEVAL: # type: ignore
                 if assistant_id is None or thread_id is None:
                     raise ValueError(
                         "Both assistant_id and thread_id must be provided if Retrieval tool is used"
@@ -158,8 +158,8 @@ class ConfigurableAgent(RunnableBinding):
                     get_retrieval_tool(assistant_id, thread_id, retrieval_description)
                 )
             else:
-                tool_config = _tool["config"]
-                _returned_tools = TOOLS[_tool["type"]](**tool_config)
+                tool_config = _tool["config"] # type: ignore
+                _returned_tools = TOOLS[_tool["type"]](**tool_config) # type: ignore
                 if isinstance(_returned_tools, list):
                     _tools.extend(_returned_tools)
                 else:
@@ -206,7 +206,7 @@ def get_chatbot(
     elif llm_type == LLMType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
     elif llm_type == LLMType.OLLAMA:
-        llm = get_ollama_llm(model=OLLAMA_MODEL_NAME)
+        llm = get_ollama_llm()
     else:
         raise ValueError(f"Unexpected llm type {llm_type}")
     return get_chatbot_executor(llm, system_message, CHECKPOINTER)
@@ -281,7 +281,7 @@ class ConfigurableRetrieval(RunnableBinding):
         elif llm_type == LLMType.FFM:
             llm = get_ffm_llm(model=FFM_MODEL_NAME)
         elif llm_type == LLMType.OLLAMA:
-            llm = get_ollama_llm(model=OLLAMA_MODEL_NAME)
+            llm = get_ollama_llm()
         else:
             raise ValueError("Unexpected llm type")
         chatbot = get_retrieval_executor(llm, retriever, system_message, CHECKPOINTER)

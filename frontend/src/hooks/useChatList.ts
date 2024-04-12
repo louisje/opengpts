@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import orderBy from "lodash/orderBy";
-import { v4 as uuidv4 } from "uuid";
 
 export interface Message {
+  id: string;
   type: string;
   content:
     | string
@@ -16,6 +16,7 @@ export interface Message {
       arguments?: string;
     };
     tool_calls?: {
+      id: string;
       function?: {
         name?: string;
         arguments?: string;
@@ -34,13 +35,11 @@ export interface Chat {
 
 export interface ChatListProps {
   chats: Chat[] | null;
-  currentChat: Chat | null;
   createChat: (
     name: string,
     assistant_id: string,
     thread_id?: string,
   ) => Promise<Chat>;
-  enterChat: (id: string | null) => void;
 }
 
 function chatsReducer(
@@ -60,7 +59,6 @@ function chatsReducer(
 
 export function useChatList(): ChatListProps {
   const [chats, setChats] = useReducer(chatsReducer, null);
-  const [current, setCurrent] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchChats() {
@@ -75,35 +73,22 @@ export function useChatList(): ChatListProps {
     fetchChats();
   }, []);
 
-  const createChat = useCallback(
-    async (
-      name: string,
-      assistant_id: string,
-      thread_id: string = uuidv4(),
-    ) => {
-      const saved = await fetch(`/threads/${thread_id}`, {
-        method: "PUT",
-        body: JSON.stringify({ assistant_id, name }),
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      }).then((r) => r.json());
-      setChats(saved);
-      setCurrent(saved.thread_id);
-      return saved;
-    },
-    [],
-  );
-
-  const enterChat = useCallback((id: string | null) => {
-    setCurrent(id);
+  const createChat = useCallback(async (name: string, assistant_id: string) => {
+    const response = await fetch(`/threads`, {
+      method: "POST",
+      body: JSON.stringify({ assistant_id, name }),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
+    const saved = await response.json();
+    setChats(saved);
+    return saved;
   }, []);
 
   return {
     chats,
-    currentChat: chats?.find((c) => c.thread_id === current) || null,
     createChat,
-    enterChat,
   };
 }

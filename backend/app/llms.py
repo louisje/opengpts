@@ -5,25 +5,13 @@ from urllib.parse import urlparse
 
 import boto3
 import httpx
-
-from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks, ChatOllama
+from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks
+from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
 from langchain_google_vertexai import ChatVertexAI
-from langchain_openai import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
 
-def get_ollama_llm(model):
-    llm = ChatOllama(
-        base_url="http://ollama:11434",
-        model=model,
-        stop=["[INST]","[/INST]","<start_of_turn>","<end_of_turn>"],
-        num_gpu=0,
-        temperature=0.5,
-        top_k=50,
-        top_p=1.0,
-        repeat_penalty=1.0,
-    )
-    return llm
 
 def get_ffm_llm(model: str):
     llm = ChatFFM(
@@ -54,24 +42,14 @@ def get_openai_llm(gpt_4: bool = False, azure: bool = False):
         else:
             logger.warn("Invalid proxy URL provided. Proceeding without proxy.")
 
-    if not azure:
-        openai_model = os.environ["GPT_4_MODEL"] if gpt_4 else os.environ["GPT_35_TURBO_MODEL"]
-        llm = ChatOpenAI(
-            http_client=http_client,
-            model=openai_model,
-            temperature=0,
-            streaming=True,
-        )
-    else:
-        llm = AzureChatOpenAI(
-            http_client=http_client,
-            temperature=0,
-            azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-            base_url=os.environ["AZURE_OPENAI_API_BASE"],
-            api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-            api_key=os.environ["AZURE_OPENAI_API_KEY"], # type: ignore
-            streaming=True,
-        )
+    openai_model = os.environ["GPT_4_MODEL"] if gpt_4 else os.environ["GPT_35_TURBO_MODEL"]
+    llm = ChatOpenAI(
+        http_client=http_client,
+        model=openai_model,
+        temperature=0,
+        streaming=True,
+    )
+
     return llm
 
 
@@ -96,7 +74,7 @@ def get_google_llm():
         project=os.environ["GOOGLE_CLOUD_PROJECT_ID"],
         model_name=os.environ["GEMINI_MODEL"],
         convert_system_message_to_human=True,
-        streaming=True,
+        streaming=False,
         safety_settings={
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
@@ -109,3 +87,24 @@ def get_google_llm():
 @lru_cache(maxsize=1)
 def get_mixtral_fireworks():
     return ChatFireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
+
+
+@lru_cache(maxsize=1)
+def get_ollama_llm():
+    model_name = os.environ.get("OLLAMA_MODEL")
+    if not model_name:
+        model_name = "llama2"
+    ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
+    if not ollama_base_url:
+        ollama_base_url = "http://localhost:11434"
+
+    return ChatOllama(
+        model=model_name,
+        base_url=ollama_base_url,
+        stop=["[INST]","[/INST]","<start_of_turn>","<end_of_turn>"],
+        num_gpu=0,
+        temperature=0.5,
+        top_k=50,
+        top_p=1.0,
+        repeat_penalty=1.0,
+    )
