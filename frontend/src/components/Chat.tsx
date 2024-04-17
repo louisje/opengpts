@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { StreamStateProps } from "../hooks/useStreamState";
 import { useChatMessages } from "../hooks/useChatMessages";
 import TypingBox from "./TypingBox";
-import { Message } from "./Message";
+import { MessageViewer } from "./Message";
 import { ArrowDownCircleIcon } from "@heroicons/react/24/outline";
 import { MessageWithFiles } from "../utils/formTypes.ts";
 import { useParams } from "react-router-dom";
@@ -25,7 +25,7 @@ function usePrevious<T>(value: T): T | undefined {
 
 export function Chat(props: ChatProps) {
   const { chatId } = useParams();
-  const { messages, resumeable } = useChatMessages(
+  const { messages, next } = useChatMessages(
     chatId ?? null,
     props.stream,
     props.stopStream,
@@ -51,7 +51,7 @@ export function Chat(props: ChatProps) {
   return (
     <div className="flex-1 flex flex-col items-stretch pb-[76px] pt-2">
       {messages?.map((msg, i) => (
-        <Message
+        <MessageViewer
           {...msg}
           key={msg.id}
           runId={
@@ -71,7 +71,7 @@ export function Chat(props: ChatProps) {
           An error has occurred. Please try again.
         </div>
       )}
-      {resumeable && props.stream?.status !== "inflight" && (
+      {next.length > 0 && props.stream?.status !== "inflight" && (
         <div
           className="flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800 ring-1 ring-inset ring-yellow-600/20 cursor-pointer"
           onClick={() => props.startStream(null, currentChat.thread_id)}

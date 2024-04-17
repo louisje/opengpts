@@ -2,7 +2,6 @@ from enum import Enum
 import os
 from typing import Any, Mapping, Optional, Sequence, Union
 
-from app.agent_types.xml_agent import get_xml_agent_executor
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AnyMessage
@@ -12,11 +11,9 @@ from langchain_core.runnables import (
 )
 from langgraph.checkpoint import CheckpointAt
 
-from app.agent_types.google_agent import get_google_agent_executor
-from app.agent_types.openai_agent import get_openai_agent_executor
 from app.agent_types.ffm_agent import get_ffm_agent_executor
+from app.agent_types.tools_agent import get_tools_agent_executor
 from app.chatbot import get_chatbot_executor
-from app.agent_types.ollama_agent import get_ollama_agent_executor
 from app.checkpoint import PostgresCheckpoint
 from app.retrieval import get_retrieval_executor
 from app.llms import (
@@ -85,29 +82,29 @@ def get_agent_executor(
 ) -> CompiledGraph:
     if agent == AgentType.GPT_35_TURBO:
         llm = get_openai_llm()
-        return get_openai_agent_executor(
+        return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.GPT_4:
         llm = get_openai_llm(gpt_4=True)
-        return get_openai_agent_executor(
+        return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.CLAUDE:
         llm = get_anthropic_llm()
-        return get_xml_agent_executor(
+        return get_tools_agent_executor(
              tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.GEMINI:
         llm = get_google_llm()
-        return get_google_agent_executor(
+        return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
-    # elif agent == AgentType.MISTRAL:
-    #    llm = get_mixtral_fireworks()
-    #    return get_mixtral_agent_executor(
-    #        tools, llm, system_message, interrupt_before_action, CHECKPOINTER
-    #    )
+    elif agent == AgentType.MISTRAL:
+       llm = get_mixtral_fireworks()
+       return get_tools_agent_executor(
+           tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+       )
     elif agent == AgentType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
         return get_ffm_agent_executor(
@@ -115,7 +112,7 @@ def get_agent_executor(
         )
     elif agent == AgentType.OLLAMA:
         llm = get_ollama_llm()
-        return get_ollama_agent_executor(
+        return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     else:

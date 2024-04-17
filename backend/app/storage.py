@@ -1,13 +1,13 @@
 import uuid
 
 from datetime import datetime, timezone
-from typing import List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.messages import AnyMessage
 
 from app.agent import AgentType, get_agent_executor
 from app.lifespan import get_pg_pool
-from app.schema import Assistant, Thread
+from app.schema import Assistant, Thread, User
 
 
 async def list_assistants(user_id: str) -> List[Assistant]:
@@ -100,22 +100,22 @@ async def get_thread(user_id: str, thread_id: str) -> Optional[Thread]:
         )
 
 
-async def get_thread_messages(user_id: str, thread_id: str):
-    """Get all messages for a thread."""
+async def get_thread_state(user_id: str, thread_id: str):
+    """Get state for a thread."""
     app = get_agent_executor([], AgentType.GPT_35_TURBO, "", False)
     state = await app.aget_state({"configurable": {"thread_id": thread_id}})
     return {
-        "messages": state.values,
-        "resumeable": bool(state.next),
+        "values": state.values,
+        "next": state.next,
     }
 
 
-async def post_thread_messages(
-    user_id: str, thread_id: str, messages: Sequence[AnyMessage]
+async def update_thread_state(
+    user_id: str, thread_id: str, values: Union[Sequence[AnyMessage], Dict[str, Any]]
 ):
-    """Add messages to a thread."""
+    """Add state to a thread."""
     app = get_agent_executor([], AgentType.GPT_35_TURBO, "", False)
-    await app.aupdate_state({"configurable": {"thread_id": thread_id}}, messages)
+    await app.aupdate_state({"configurable": {"thread_id": thread_id}}, values)
 
 
 async def get_thread_history(user_id: str, thread_id: str):
@@ -124,7 +124,7 @@ async def get_thread_history(user_id: str, thread_id: str):
     return [
         {
             "values": c.values,
-            "resumeable": bool(c.next),
+            "next": c.next,
             "config": c.config,
             "parent": c.parent_config,
         }
@@ -162,3 +162,24 @@ async def put_thread(
             "name": name,
             "updated_at": updated_at,
         })
+
+
+async def get_or_create_user(sub: str) -> tuple[User, bool]:
+    """Returns a tuple of the user and a boolean indicating whether the user was created."""
+    async with get_pg_pool().acquire() as conn:
+        if user := await conn.fetchrow('SELECT * FROM "user" WHERE sub = $1', sub):
+            return user, False
+        user = await conn.fetchrow(
+            'INSERT INTO "user" (sub) VALUES ($1) RETURNING *', sub
+        )
+        return user, True
+
+
+async def delete_thread(user_id: str, thread_id: str):
+    """Delete a thread by ID."""
+    async with get_pg_pool().acquire() as conn:
+        await conn.execute(
+            "DELETE FROM thread WHERE thread_id = $1 AND user_id = $2",
+            thread_id,
+            user_id,
+        )

@@ -5,12 +5,13 @@ from urllib.parse import urlparse
 
 import boto3
 import httpx
-from langchain_community.chat_models import BedrockChat, ChatAnthropic, ChatFireworks
+from langchain_community.chat_models import BedrockChat, ChatFireworks
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
 from langchain_google_vertexai import ChatVertexAI
 from langchain_openai import ChatOpenAI
 from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
+from langchain_anthropic import ChatAnthropic
 
 
 def get_ffm_llm(model: str):
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=4)
-def get_openai_llm(gpt_4: bool = False, azure: bool = False):
+def get_openai_llm(gpt_4: bool = False):
     proxy_url = os.getenv("PROXY_URL")
     http_client = None
     if proxy_url:
@@ -64,7 +65,11 @@ def get_anthropic_llm(bedrock: bool = False):
         )
         model = BedrockChat(model_id="anthropic.claude-v2", client=client)
     else:
-        model = ChatAnthropic(temperature=0, max_tokens=2000)
+        model = ChatAnthropic(
+            model_name="claude-3-haiku-20240307",
+            max_tokens_to_sample=2000,
+            temperature=0,
+        )
     return model
 
 

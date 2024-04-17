@@ -12,8 +12,7 @@ sse-starlette = "^1.6.5"
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
-langserve = "0.0.32"
-langchain-core = {path = "packages/langchain/libs/core", develop = true}
+langserve = "^0.1.0"
 langchain-cli = {path = "packages/langchain/libs/cli", develop = true}
 langchain-community = {path = "packages/langchain/libs/community", develop = true}
 langchain-experimental = {path = "packages/langchain/libs/experimental", develop = true}
@@ -35,13 +34,13 @@ arxiv = "^2.1.0"
 kay = "^0.1.2"
 xmltodict = "^0.13.0"
 wikipedia = "^1.4.0"
-langchain-google-vertexai = {path = "packages/langchain-google/libs/vertexai", develop = true}
+langchain-google-vertexai = { path = "packages/langchain-google/libs/vertexai", develop = true }
 setuptools = "^69.0.3"
 pdfminer-six = "^20231228"
-langchain-robocorp = {path = "packages/langchain/libs/partners/robocorp", develop = true}
+langchain-robocorp = { path = "packages/langchain/libs/partners/robocorp", develop = true }
 fireworks-ai = "^0.11.2"
-anthropic = "^0.16.0"
-httpx = { version = "0.26.0", extras = ["socks"] }
+anthropic = ">=0.17.0,<1"
+httpx = { version = "0.25.2", extras = ["socks"] }
 unstructured = {extras = ["doc", "docx"], version = "^0.12.5"}
 playwright = "^1.42.0"
 html2text = "^2024.2.26"
@@ -49,7 +48,9 @@ google-cloud-aiplatform = "^1.44.0"
 pgvector = "^0.2.5"
 psycopg2-binary = "^2.9.9"
 asyncpg = "^0.29.0"
-google-api-python-client = "^2.125.0"
+langchain-core = {path = "packages/langchain/libs/core", develop = true}
+pyjwt = {extras = ["crypto"], version = "^2.8.0"}
+langchain-anthropic = { path = "packages/langchain/libs/partners/anthropic", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

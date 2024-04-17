@@ -1,38 +1,47 @@
-import json
+from typing import cast
 
-from langchain.schema.messages import FunctionMessage
 from langchain.tools import BaseTool
 from langchain_core.language_models.base import LanguageModelLike
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langgraph.checkpoint import BaseCheckpointSaver
-from langgraph.graph import END
+from langgraph.graph import END, CompiledGraph
 from langgraph.graph.message import MessageGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
-from app.message_types import LiberalFunctionMessage
+from app.message_types import LiberalToolMessage
 
 
-def get_google_agent_executor(
+def get_tools_agent_executor(
     tools: list[BaseTool],
     llm: LanguageModelLike,
     system_message: str,
     interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver,
-):
-    def _get_messages(messages):
+) -> CompiledGraph:
+    async def _get_messages(messages):
         msgs = []
         for m in messages:
-            if isinstance(m, LiberalFunctionMessage):
+            if isinstance(m, LiberalToolMessage):
                 _dict = m.dict()
                 _dict["content"] = str(_dict["content"])
-                m_c = FunctionMessage(**_dict)
+                m_c = ToolMessage(**_dict)
                 msgs.append(m_c)
+            elif isinstance(m, FunctionMessage):
+                # anthropic doesn't like function messages
+                msgs.append(HumanMessage(content=str(m.content)))
             else:
                 msgs.append(m)
+
         return [SystemMessage(content=system_message)] + msgs
 
     if tools:
-        llm_with_tools = llm.bind(functions=tools)
+        llm_with_tools = llm.bind_tools(tools)
     else:
         llm_with_tools = llm
     agent = _get_messages | llm_with_tools
@@ -42,7 +51,7 @@ def get_google_agent_executor(
     def should_continue(messages):
         last_message = messages[-1]
         # If there is no function call, then we finish
-        if "function_call" not in last_message.additional_kwargs:
+        if not last_message.tool_calls:
             return "end"
         # Otherwise if there is, we continue
         else:
@@ -50,22 +59,30 @@ def get_google_agent_executor(
 
     # Define the function to execute tools
     async def call_tool(messages):
+        actions: list[ToolInvocation] = []
         # Based on the continue condition
         # we know the last message involves a function call
-        last_message = messages[-1]
-        # We construct an ToolInvocation from the function_call
-        action = ToolInvocation(
-            tool=last_message.additional_kwargs["function_call"]["name"],
-            tool_input=json.loads(
-                last_message.additional_kwargs["function_call"]["arguments"]
-            ),
-        )
+        last_message = cast(AIMessage, messages[-1])
+        for tool_call in last_message.tool_calls:
+            # We construct a ToolInvocation from the function_call
+            actions.append(
+                ToolInvocation(
+                    tool=tool_call["name"],
+                    tool_input=tool_call["args"],
+                )
+            )
         # We call the tool_executor and get back a response
-        response = await tool_executor.ainvoke(action)
-        # We use the response to create a FunctionMessage
-        function_message = LiberalFunctionMessage(content=response, name=action.tool)
-        # We return a list, because this will get added to the existing list
-        return function_message
+        responses = await tool_executor.abatch(actions)
+        # We use the response to create a ToolMessage
+        tool_messages = [
+            LiberalToolMessage(
+                tool_call_id=tool_call["id"],
+                name=tool_call["name"],
+                content=response,
+            )
+            for tool_call, response in zip(last_message.tool_calls, responses)
+        ]
+        return tool_messages
 
     workflow = MessageGraph()
 
