@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import boto3
 import httpx
+from pydantic import SecretStr
 from langchain_community.chat_models import BedrockChat, ChatFireworks
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=4)
-def get_openai_llm(gpt_4: bool = False):
+def get_openai_llm():
     proxy_url = os.getenv("PROXY_URL")
     http_client = None
     if proxy_url:
@@ -43,10 +44,10 @@ def get_openai_llm(gpt_4: bool = False):
         else:
             logger.warn("Invalid proxy URL provided. Proceeding without proxy.")
 
-    openai_model = os.environ["GPT_4_MODEL"] if gpt_4 else os.environ["GPT_35_TURBO_MODEL"]
     llm = ChatOpenAI(
-        http_client=http_client,
-        model=openai_model,
+        http_async_client=http_client,
+        base_url=os.getenv("OPENAI_BASE_URL") or None,
+        model=os.environ["GPT_35_TURBO_MODEL"],
         temperature=0,
         streaming=True,
     )
@@ -55,22 +56,14 @@ def get_openai_llm(gpt_4: bool = False):
 
 
 @lru_cache(maxsize=2)
-def get_anthropic_llm(bedrock: bool = False):
-    if bedrock:
-        client = boto3.client(
-            "bedrock-runtime",
-            region_name="us-west-2",
-            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
-        )
-        model = BedrockChat(model_id="anthropic.claude-v2", client=client)
-    else:
-        model = ChatAnthropic(
-            model_name="claude-3-haiku-20240307",
+def get_anthropic_llm():
+        return ChatAnthropic(
+            model_name=os.environ["CLAUDE_MODEL"],
             max_tokens_to_sample=2000,
             temperature=0,
+            timeout=10000,
+            api_key=SecretStr(os.environ["ANTHROPIC_API_KEY"])
         )
-    return model
 
 
 @lru_cache(maxsize=1)

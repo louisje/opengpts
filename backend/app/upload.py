@@ -54,25 +54,9 @@ def _convert_ingestion_input_to_blob(data: BinaryIO) -> Blob:
 
 
 def _determine_azure_or_openai_embeddings() -> PGVector:
-    if os.environ.get("OPENAI_API_KEY"):
-        return PGVector(
-            connection_string=PG_CONNECTION_STRING,
-            embedding_function=OpenAIEmbeddings(),
-        )
-    if os.environ.get("AZURE_OPENAI_API_KEY"):
-        return PGVector(
-            connection_string=PG_CONNECTION_STRING,
-            embedding_function=AzureOpenAIEmbeddings(
-                azure_endpoint=os.environ.get("AZURE_OPENAI_API_BASE"),
-                azure_deployment=os.environ.get(
-                    "AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME"
-                ),
-                openai_api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            ),
-            use_jsonb=True,
-        )
-    raise ValueError(
-        "Either OPENAI_API_KEY or AZURE_OPENAI_API_KEY needs to be set for embeddings to work."
+    return PGVector(
+        connection_string=PG_CONNECTION_STRING,
+        embedding_function=OpenAIEmbeddings(),
     )
 
 

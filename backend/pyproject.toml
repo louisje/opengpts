@@ -12,8 +12,8 @@ sse-starlette = "^1.6.5"
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
-langserve = "^0.1.0"
-langchain-cli = {path = "packages/langchain/libs/cli", develop = true}
+langserve = "0.0.32"
+# langchain-cli = {path = "packages/langchain/libs/cli", develop = true}
 langchain-community = {path = "packages/langchain/libs/community", develop = true}
 langchain-experimental = {path = "packages/langchain/libs/experimental", develop = true}
 # Uncomment if you need to work from a development branch
@@ -51,6 +51,7 @@ asyncpg = "^0.29.0"
 langchain-core = {path = "packages/langchain/libs/core", develop = true}
 pyjwt = {extras = ["crypto"], version = "^2.8.0"}
 langchain-anthropic = { path = "packages/langchain/libs/partners/anthropic", develop = true }
+google-api-python-client = "^2.126.0"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

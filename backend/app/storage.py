@@ -1,5 +1,3 @@
-import uuid
-
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -75,7 +73,7 @@ async def put_assistant(
                 public,
             )
     return {
-        "assistant_id": uuid.UUID(assistant_id),
+        "assistant_id": assistant_id,
         "user_id": user_id,
         "name": name,
         "config": config,
@@ -156,9 +154,9 @@ async def put_thread(
             updated_at,
         )
         return Thread({
-            "thread_id": uuid.UUID(thread_id),
+            "thread_id": thread_id,
             "user_id": user_id,
-            "assistant_id": uuid.UUID(assistant_id),
+            "assistant_id": assistant_id,
             "name": name,
             "updated_at": updated_at,
         })

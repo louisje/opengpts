@@ -45,7 +45,6 @@ OLLAMA_MODEL_NAME = os.environ["OLLAMA_MODEL"]
 FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
 GPT_35_TURBO_MODEL_NAME = os.environ["GPT_35_TURBO_MODEL"]
-GPT_4_MODEL_NAME = os.environ["GPT_4_MODEL"]
 MISTRAL_MODEL_NAME = os.environ["MISTRAL_MODEL"]
 CLAUDE_MODEL_NAME = os.environ["CLAUDE_MODEL"]
 
@@ -60,8 +59,7 @@ Tool = Union[
 ]
 
 class AgentType(str, Enum):
-    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
-    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeGPT35)"
     CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
@@ -82,11 +80,6 @@ def get_agent_executor(
 ) -> CompiledGraph:
     if agent == AgentType.GPT_35_TURBO:
         llm = get_openai_llm()
-        return get_tools_agent_executor(
-            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
-        )
-    elif agent == AgentType.GPT_4:
-        llm = get_openai_llm(gpt_4=True)
         return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
@@ -177,8 +170,7 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
-    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
-    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeGPT35)"
     CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
@@ -192,8 +184,6 @@ def get_chatbot(
 ):
     if llm_type == LLMType.GPT_35_TURBO:
         llm = get_openai_llm()
-    elif llm_type == LLMType.GPT_4:
-        llm = get_openai_llm(gpt_4=True)
     elif llm_type == LLMType.CLAUDE:
         llm = get_anthropic_llm()
     elif llm_type == LLMType.GEMINI:
@@ -267,8 +257,6 @@ class ConfigurableRetrieval(RunnableBinding):
         retriever = get_retriever(assistant_id, thread_id)
         if llm_type == LLMType.GPT_35_TURBO:
             llm = get_openai_llm()
-        elif llm_type == LLMType.GPT_4:
-            llm = get_openai_llm(gpt_4=True)
         elif llm_type == LLMType.CLAUDE:
             llm = get_anthropic_llm()
         elif llm_type == LLMType.GEMINI:

@@ -1,11 +1,6 @@
 version: "3"
 
 services:
-  freegpt35:
-    image: missuo/freegpt35:latest
-    restart: always
-    ports:
-      - "3040:3040"
   postgres:
     image: pgvector/pgvector:pg16
     healthcheck:
