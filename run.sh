@@ -27,7 +27,6 @@ elif [ -z "$1" ]; then
 fi
 
 for container in "$@"; do
-    docker compose build "$container"
-    docker compose restart "$container"
+    docker compose up -d --build "$container"
 done
 
