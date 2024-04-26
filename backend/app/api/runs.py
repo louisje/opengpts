@@ -7,7 +7,6 @@ from langchain.pydantic_v1 import ValidationError
 from langchain_core.messages import AnyMessage
 from langchain_core.runnables import RunnableConfig
 from langserve.schema import FeedbackCreateRequest
-from langserve.server import _unpack_input
 from langsmith.utils import tracing_is_enabled
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
@@ -15,7 +14,7 @@ from sse_starlette import EventSourceResponse
 from app.agent import agent
 from app.auth.handlers import AuthedUser
 from app.storage import get_assistant, get_thread
-from app.stream import astream_messages, to_sse
+from app.stream import astream_state, to_sse
 
 router = APIRouter()
 
@@ -48,17 +47,14 @@ async def _run_input_and_config(payload: CreateRunPayload, user_id: str):
             "thread_id": str(thread["thread_id"]),
             "assistant_id": str(assistant["assistant_id"]),
         },
-    } # type: ignore
+    }
     try:
-        input_: Sequence[AnyMessage] = (
-            _unpack_input(agent.get_input_schema(config).validate(payload.input))
-            if payload.input is not None
-            else []
-        )
+        if payload.input is not None:
+            agent.get_input_schema(config).validate(payload.input)
     except ValidationError as e:
         raise RequestValidationError(e.errors(), body=payload)
 
-    return input_, config
+    return payload.input, config
 
 
 @router.post("")
@@ -81,7 +77,7 @@ async def stream_run(
     """Create a run."""
     input_, config = await _run_input_and_config(payload, user["user_id"])
 
-    return EventSourceResponse(to_sse(astream_messages(agent, input_, config)))
+    return EventSourceResponse(to_sse(astream_state(agent, input_, config)))
 
 
 @router.get("/input_schema")

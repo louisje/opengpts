@@ -1,6 +1,7 @@
+import pickle
 from enum import Enum
 import os
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables.config import RunnableConfig
@@ -10,6 +11,8 @@ from langchain_core.runnables import (
     RunnableBinding,
 )
 from langgraph.checkpoint import CheckpointAt
+from langgraph.graph.message import Messages
+from langgraph.pregel import Pregel
 
 from app.agent_types.ffm_agent import get_ffm_agent_executor
 from app.agent_types.tools_agent import get_tools_agent_executor
@@ -29,6 +32,7 @@ from app.tools import (
     TOOLS,
     Arxiv,
     AvailableTools,
+    DallE,
     DDGSearch,
     Retrieval,
     Tavily,
@@ -56,6 +60,7 @@ Tool = Union[
     TavilyAnswer,
     Retrieval,
     GoogleSearch,
+    DallE,
 ]
 
 class AgentType(str, Enum):
@@ -69,7 +74,7 @@ class AgentType(str, Enum):
 
 DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant."
 
-CHECKPOINTER = PostgresCheckpoint(at=CheckpointAt.END_OF_STEP)
+CHECKPOINTER = PostgresCheckpoint(serde=pickle, at=CheckpointAt.END_OF_STEP)
 
 
 def get_agent_executor(
@@ -231,7 +236,10 @@ chatbot = (
         llm=ConfigurableField(id="llm_type", name="LLM Type"),
         system_message=ConfigurableField(id="system_message", name="Instructions"),
     )
-    .with_types(input_type=Sequence[AnyMessage], output_type=Sequence[AnyMessage])
+    .with_types(
+        input_type=Messages,
+        output_type=Sequence[AnyMessage],
+    )
 )
 
 
@@ -289,11 +297,14 @@ chat_retrieval = (
         ),
         thread_id=ConfigurableField(id="thread_id", name="Thread ID", is_shared=True),
     )
-    .with_types(input_type=Sequence[AnyMessage], output_type=Sequence[AnyMessage])
+    .with_types(
+        input_type=Dict[str, Any],
+        output_type=Dict[str, Any],
+    )
 )
 
 
-agent = (
+agent: Pregel = (
     ConfigurableAgent(
         agent=AgentType.GPT_35_TURBO,
         tools=[],
@@ -326,7 +337,10 @@ agent = (
         chatbot=chatbot,
         chat_retrieval=chat_retrieval,
     )
-    .with_types(input_type=Sequence[AnyMessage], output_type=Sequence[AnyMessage])
+    .with_types(
+        input_type=Messages,
+        output_type=Sequence[AnyMessage],
+    )
 )
 
 if __name__ == "__main__":

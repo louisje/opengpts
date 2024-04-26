@@ -6,13 +6,13 @@ from urllib.parse import urlparse
 import boto3
 import httpx
 from pydantic import SecretStr
+from langchain_anthropic import ChatAnthropic
 from langchain_community.chat_models import BedrockChat, ChatFireworks
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
 from langchain_google_vertexai import ChatVertexAI
 from langchain_openai import ChatOpenAI
 from langchain_google_vertexai import HarmBlockThreshold, HarmCategory
-from langchain_anthropic import ChatAnthropic
 
 
 def get_ffm_llm(model: str):

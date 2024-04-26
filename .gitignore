@@ -4,6 +4,7 @@
 .vscode
 nginx/ssl
 /ollama
+/open-webui
 /ollama-webui
 .env.gcp.yaml
 postgres-volume/
