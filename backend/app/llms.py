@@ -99,7 +99,7 @@ def get_ollama_llm():
     return ChatOllama(
         model=model_name,
         base_url=ollama_base_url,
-        stop=["[INST]","[/INST]","<start_of_turn>","<end_of_turn>"],
+        stop=["[INST]","[/INST]","<start_of_turn>","<end_of_turn>","<|end_header_id|>","<|end_id|>","<|eot_header_id|>","<|eot_id|>"],
         num_gpu=0,
         temperature=0.5,
         top_k=50,
