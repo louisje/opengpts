@@ -64,8 +64,8 @@ Tool = Union[
 ]
 
 class AgentType(str, Enum):
-    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeGPT35)"
-    CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeDuckDuckGo)"
+    CLAUDE = f"{CLAUDE_MODEL_NAME} (FreeDuckDuckGo)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
@@ -89,7 +89,7 @@ def get_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.CLAUDE:
-        llm = get_anthropic_llm()
+        llm = get_openai_llm()
         return get_tools_agent_executor(
              tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
@@ -175,8 +175,8 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
-    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeGPT35)"
-    CLAUDE = f"{CLAUDE_MODEL_NAME} (Antrop/c)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeDuckDuckGo)"
+    CLAUDE = f"{CLAUDE_MODEL_NAME} (FreeDuckDuckGo)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
@@ -190,7 +190,7 @@ def get_chatbot(
     if llm_type == LLMType.GPT_35_TURBO:
         llm = get_openai_llm()
     elif llm_type == LLMType.CLAUDE:
-        llm = get_anthropic_llm()
+        llm = get_openai_llm()
     elif llm_type == LLMType.GEMINI:
         llm = get_google_llm()
     elif llm_type == LLMType.MISTRAL:

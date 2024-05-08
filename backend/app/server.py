@@ -1,8 +1,8 @@
-import logging
 import os
 from pathlib import Path
 
 import orjson
+import structlog
 from fastapi import FastAPI, Form, UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -11,9 +11,9 @@ import app.storage as storage
 from .api import router as api_router
 from app.auth.handlers import AuthedUser
 from app.lifespan import lifespan
-from app.upload import ingest_runnable
+from app.upload import convert_ingestion_input_to_blob, ingest_runnable
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 app = FastAPI(title="OpenGPTs API", lifespan=lifespan)
 
@@ -44,7 +44,8 @@ async def ingest_files(
         if thread is None:
             raise HTTPException(status_code=404, detail="Thread not found.")
 
-    return ingest_runnable.batch([file.file for file in files], config)
+    file_blobs = [convert_ingestion_input_to_blob(file) for file in files]
+    return ingest_runnable.batch(file_blobs, config)
 
 
 @app.get("/health")

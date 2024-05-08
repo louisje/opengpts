@@ -1,10 +1,10 @@
-import logging
 import os
 from functools import lru_cache
 from urllib.parse import urlparse
 
 import boto3
 import httpx
+import structlog
 from pydantic import SecretStr
 from langchain_anthropic import ChatAnthropic
 from langchain_community.chat_models import BedrockChat, ChatFireworks
@@ -30,7 +30,7 @@ def get_ffm_llm(model: str):
     )
     return llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @lru_cache(maxsize=4)

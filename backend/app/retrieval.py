@@ -9,6 +9,7 @@ from langchain_community.document_loaders.chromium import AsyncChromiumLoader
 from langchain_community.document_transformers.html2text import Html2TextTransformer
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.prompts import PromptTemplate
 from langchain_core.messages.base import BaseMessage
 from langchain_core.retrievers import BaseRetriever
 
@@ -20,6 +21,22 @@ from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
 
 from app.message_types import LiberalToolMessage, add_messages_liberal
+
+from app.message_types import LiberalToolMessage, add_messages_liberal
+
+search_prompt = PromptTemplate.from_template(
+    """Given the conversation below, come up with a search query to look up.
+
+This search query can be either a few words or question
+
+Return ONLY this search query, nothing more.
+
+>>> Conversation:
+{conversation}
+>>> END OF CONVERSATION
+
+Remember, return ONLY the search query that will help you when formulating a response to the above conversation."""
+)
 
 response_prompt_template = """{instructions}
 
@@ -74,7 +91,7 @@ def get_retrieval_executor(
         for msg in messages:
             if isinstance(msg, AIMessage):
                 if not msg.tool_calls:
-                    chat_history.append(m)
+                    chat_history.append(msg)
             if isinstance(msg, HumanMessage):
                 chat_history.append(msg)
         docs = messages[-1].content
