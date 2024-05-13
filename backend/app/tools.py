@@ -14,7 +14,7 @@ from langchain_community.retrievers.you import YouRetriever
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
 from langchain_community.tools.connery import ConneryService
 from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
-from langchain_community.tools.google_search.tool import GoogleSearchResults, GoogleSearchRetriever
+from langchain_google_community import GoogleSearchResults, GoogleSearchRetriever
 from langchain_community.tools.openweathermap.tool import OpenWeatherMapQueryRun
 from langchain_community.tools.tavily_search import (
     TavilyAnswer as _TavilyAnswer,

@@ -12,8 +12,6 @@ sse-starlette = "^1.6.5"
 tomli-w = "^1.0.0"
 uvicorn = "^0.23.2"
 fastapi = "^0.103.2"
-langserve = "0.0.32"
-# langchain-cli = {path = "packages/langchain/libs/cli", develop = true}
 langchain-community = {path = "packages/langchain/libs/community", develop = true}
 langchain-experimental = {path = "packages/langchain/libs/experimental", develop = true}
 # Uncomment if you need to work from a development branch
@@ -53,6 +51,7 @@ langchain-anthropic = { path = "packages/langchain/libs/partners/anthropic", dev
 google-api-python-client = "^2.126.0"
 structlog = "^24.1.0"
 python-json-logger = "^2.0.7"
+langchain-google-community = {path = "packages/langchain-google/libs/community", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

@@ -1,3 +1,4 @@
+import functools
 from typing import Any, AsyncIterator, Dict, Optional, Sequence, Union
 
 import orjson
@@ -5,7 +6,6 @@ import structlog
 from langchain_core.messages import AnyMessage, BaseMessage, message_chunk_to_message
 from langchain_core.messages.base import BaseMessageChunk
 from langchain_core.runnables import Runnable, RunnableConfig
-from langserve.serialization import WellKnownLCSerializer
 
 logger = structlog.get_logger(__name__)
 
@@ -56,7 +56,13 @@ async def astream_state(
             yield [messages[str(message.id)]]
 
 
-_serializer = WellKnownLCSerializer()
+def _default(obj) -> Any:
+    if hasattr(obj, "dict") and callable(obj.dict):
+        return obj.dict()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+
+dumps = functools.partial(orjson.dumps, default=_default)
 
 
 async def to_sse(messages_stream: MessagesStream) -> AsyncIterator[dict]:
@@ -74,7 +80,7 @@ async def to_sse(messages_stream: MessagesStream) -> AsyncIterator[dict]:
             else:
                 yield {
                     "event": "data",
-                    "data": _serializer.dumps(
+                    "data": dumps(
                         [message_chunk_to_message(msg) for msg in chunk]
                     ).decode(),
                 }

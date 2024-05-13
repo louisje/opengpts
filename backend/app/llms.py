@@ -19,7 +19,7 @@ def get_ffm_llm(model: str):
     llm = ChatFFM(
         model=model,
         max_new_tokens=1024,
-        temperature=0.1,
+        temperature=0.2,
         top_k=50,
         top_p=1.0,
         frequence_penalty=1.0,
@@ -34,7 +34,7 @@ logger = structlog.get_logger(__name__)
 
 
 @lru_cache(maxsize=4)
-def get_openai_llm():
+def get_openai_llm(openai: bool = False, gpt4: bool = False, model = None):
     proxy_url = os.getenv("PROXY_URL")
     http_client = None
     if proxy_url:
@@ -46,9 +46,9 @@ def get_openai_llm():
 
     llm = ChatOpenAI(
         http_async_client=http_client,
-        base_url=os.getenv("OPENAI_BASE_URL") or None,
-        model=os.environ["GPT_35_TURBO_MODEL"],
-        temperature=0,
+        base_url="https://api.openai.com/v1" if openai else (os.getenv("OPENAI_BASE_URL") or None),
+        model=model if model else os.environ["GPT_4_MODEL"] if gpt4 else os.environ["GPT_35_TURBO_MODEL"],
+        temperature=0.5,
         streaming=True,
     )
 

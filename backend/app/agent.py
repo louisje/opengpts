@@ -48,6 +48,7 @@ from langchain_core.tools import BaseTool
 OLLAMA_MODEL_NAME = os.environ["OLLAMA_MODEL"]
 FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
+GPT_4_MODEL_NAME = os.environ["GPT_4_MODEL"]
 GPT_35_TURBO_MODEL_NAME = os.environ["GPT_35_TURBO_MODEL"]
 MISTRAL_MODEL_NAME = os.environ["MISTRAL_MODEL"]
 CLAUDE_MODEL_NAME = os.environ["CLAUDE_MODEL"]
@@ -64,8 +65,8 @@ Tool = Union[
 ]
 
 class AgentType(str, Enum):
-    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeDuckDuckGo)"
-    CLAUDE = f"{CLAUDE_MODEL_NAME} (FreeDuckDuckGo)"
+    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
     MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
@@ -84,14 +85,14 @@ def get_agent_executor(
     interrupt_before_action: bool,
 ) -> CompiledGraph:
     if agent == AgentType.GPT_35_TURBO:
-        llm = get_openai_llm()
+        llm = get_openai_llm(openai=True)
         return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
-    elif agent == AgentType.CLAUDE:
-        llm = get_openai_llm()
+    elif agent == AgentType.GPT_4:
+        llm = get_openai_llm(openai=True, gpt4=True)
         return get_tools_agent_executor(
-             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.GEMINI:
         llm = get_google_llm()
@@ -175,6 +176,7 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
+    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeDuckDuckGo)"
     CLAUDE = f"{CLAUDE_MODEL_NAME} (FreeDuckDuckGo)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
@@ -188,7 +190,9 @@ def get_chatbot(
     system_message: str,
 ):
     if llm_type == LLMType.GPT_35_TURBO:
-        llm = get_openai_llm()
+        llm = get_openai_llm(openai=True, gpt4=True)
+    elif llm_type == LLMType.GPT_4:
+        llm = get_openai_llm(model=CLAUDE_MODEL_NAME)
     elif llm_type == LLMType.CLAUDE:
         llm = get_openai_llm()
     elif llm_type == LLMType.GEMINI:
