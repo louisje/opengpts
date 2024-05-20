@@ -19,7 +19,7 @@ langchain-experimental = {path = "packages/langchain/libs/experimental", develop
 # langchain = { git = "git@github.com:langchain-ai/langchain.git/", branch = "nc/subclass-runnable-binding" , subdirectory = "libs/langchain"}
 orjson = "^3.9.10"
 python-multipart = "^0.0.6"
-tiktoken = "^0.5.1"
+tiktoken = ">=0.7,<1"
 langchain = {path = "packages/langchain/libs/langchain", develop = true}
 langgraph = {path = "packages/langgraph", develop = true}
 pydantic = "<2.0"
@@ -31,10 +31,10 @@ arxiv = "^2.1.0"
 kay = "^0.1.2"
 xmltodict = "^0.13.0"
 wikipedia = "^1.4.0"
-langchain-google-vertexai = { path = "packages/langchain-google/libs/vertexai", develop = true }
+langchain-google-vertexai = { path = "packages/langchain-google/libs/vertexai", develop = true}
 setuptools = "^69.0.3"
 pdfminer-six = "^20231228"
-langchain-robocorp = { path = "packages/langchain/libs/partners/robocorp", develop = true }
+langchain-robocorp = { path = "packages/langchain/libs/partners/robocorp", develop = true}
 fireworks-ai = "^0.11.2"
 anthropic = ">=0.17.0,<1"
 httpx = { version = "0.25.2", extras = ["socks"] }
@@ -47,11 +47,13 @@ psycopg2-binary = "^2.9.9"
 asyncpg = "^0.29.0"
 langchain-core = {path = "packages/langchain/libs/core", develop = true}
 pyjwt = {extras = ["crypto"], version = "^2.8.0"}
-langchain-anthropic = { path = "packages/langchain/libs/partners/anthropic", develop = true }
+langchain-anthropic = { path = "packages/langchain/libs/partners/anthropic", develop = true}
 google-api-python-client = "^2.126.0"
 structlog = "^24.1.0"
 python-json-logger = "^2.0.7"
 langchain-google-community = {path = "packages/langchain-google/libs/community", develop = true}
+langchain-postgres = {path = "packages/langchain-postgres", develop = true}
+uuid6 = "^2024.1.12"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.23.2"

@@ -2,12 +2,10 @@ import os
 from functools import lru_cache
 from urllib.parse import urlparse
 
-import boto3
 import httpx
 import structlog
 from pydantic import SecretStr
 from langchain_anthropic import ChatAnthropic
-from langchain_community.chat_models import BedrockChat, ChatFireworks
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.ffm import ChatFFM
 from langchain_google_vertexai import ChatVertexAI
@@ -51,7 +49,6 @@ def get_openai_llm(openai: bool = False, gpt4: bool = False, model = None):
         temperature=0.5,
         streaming=True,
     )
-
     return llm
 
 
@@ -80,11 +77,6 @@ def get_google_llm():
             HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
         },
     )
-
-
-@lru_cache(maxsize=1)
-def get_mixtral_fireworks():
-    return ChatFireworks(model="accounts/fireworks/models/mixtral-8x7b-instruct")
 
 
 @lru_cache(maxsize=1)

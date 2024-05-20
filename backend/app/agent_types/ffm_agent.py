@@ -1,7 +1,6 @@
 import json
 
 from langchain_core.language_models.base import LanguageModelLike
-from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.system import SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_core.messages.function import FunctionMessage

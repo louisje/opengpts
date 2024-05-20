@@ -14,7 +14,7 @@ import os
 from typing import BinaryIO, List, Optional
 
 from fastapi import UploadFile
-from langchain_community.vectorstores.pgvector import PGVector
+from langchain_postgres.vectorstores import PGVector
 from langchain_core.document_loaders.blob_loaders import Blob
 from langchain_core.runnables import (
     ConfigurableField,
@@ -84,8 +84,9 @@ def convert_ingestion_input_to_blob(file: UploadFile) -> Blob:
 
 def _determine_azure_or_openai_embeddings() -> PGVector:
     return PGVector(
-        connection_string=PG_CONNECTION_STRING,
-        embedding_function=OpenAIEmbeddings(),
+        connection=PG_CONNECTION_STRING,
+        embeddings=OpenAIEmbeddings(),
+        use_jsonb=True,
     )
 
 
@@ -122,13 +123,13 @@ class IngestRunnable(RunnableSerializable[BinaryIO, List[str]]):
             MIMETYPE_BASED_PARSER,
             self.text_splitter,
             self.vectorstore,
-            self.namespace,
+            str(self.namespace),
         )
         return out
 
 
 PG_CONNECTION_STRING = PGVector.connection_string_from_db_params(
-    driver="psycopg2",
+    driver="psycopg",
     host=os.environ["POSTGRES_HOST"],
     port=int(os.environ["POSTGRES_PORT"]),
     database=os.environ["POSTGRES_DB"],

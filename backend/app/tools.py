@@ -24,7 +24,7 @@ from langchain_community.tools.tavily_search import (
 )
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
-from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
+from langchain_google_community import GoogleSearchAPIWrapper
 
 from langchain_core.documents.base import Document
 from langchain_core.retrievers import BaseRetriever

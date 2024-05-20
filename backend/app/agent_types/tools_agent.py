@@ -2,6 +2,7 @@ from typing import cast
 
 from langchain.tools import BaseTool
 from langchain_core.language_models.base import LanguageModelLike
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
@@ -19,7 +20,7 @@ from app.message_types import LiberalToolMessage
 
 def get_tools_agent_executor(
     tools: list[BaseTool],
-    llm: LanguageModelLike,
+    llm: BaseChatModel,
     system_message: str,
     interrupt_before_action: bool,
     checkpoint: BaseCheckpointSaver,
@@ -76,7 +77,7 @@ def get_tools_agent_executor(
         # We use the response to create a ToolMessage
         tool_messages = [
             LiberalToolMessage(
-                tool_call_id=tool_call["id"],
+                tool_call_id=str(tool_call["id"]),
                 name=tool_call["name"],
                 content=response,
             )

@@ -1,5 +1,6 @@
 .envrc
 ui
+packages/langchain-postgres
 packages/langchain-google
 packages/langchain
 packages/langgraph

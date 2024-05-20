@@ -20,9 +20,7 @@ from app.chatbot import get_chatbot_executor
 from app.checkpoint import PostgresCheckpoint
 from app.retrieval import get_retrieval_executor
 from app.llms import (
-    get_anthropic_llm,
     get_google_llm,
-    get_mixtral_fireworks,
     get_openai_llm,
     get_ffm_llm,
     get_ollama_llm,
@@ -49,8 +47,8 @@ OLLAMA_MODEL_NAME = os.environ["OLLAMA_MODEL"]
 FFM_MODEL_NAME = os.environ["FFM_MODEL"]
 GEMINI_MODEL_NAME = os.environ["GEMINI_MODEL"]
 GPT_4_MODEL_NAME = os.environ["GPT_4_MODEL"]
+GPT_4O_MODEL_NAME = os.environ["GPT_4O_MODEL"]
 GPT_35_TURBO_MODEL_NAME = os.environ["GPT_35_TURBO_MODEL"]
-MISTRAL_MODEL_NAME = os.environ["MISTRAL_MODEL"]
 CLAUDE_MODEL_NAME = os.environ["CLAUDE_MODEL"]
 
 Tool = Union[
@@ -65,10 +63,10 @@ Tool = Union[
 ]
 
 class AgentType(str, Enum):
-    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (OpenAI)"
+    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    GPT_4O = f"{GPT_4O_MODEL_NAME} (OpenAI)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
-    MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
@@ -90,7 +88,12 @@ def get_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.GPT_4:
-        llm = get_openai_llm(openai=True, gpt4=True)
+        llm = get_openai_llm(openai=True, gpt4=True, model=GPT_4_MODEL_NAME)
+        return get_tools_agent_executor(
+            tools, llm, system_message, interrupt_before_action, CHECKPOINTER
+        )
+    elif agent == AgentType.GPT_4O:
+        llm = get_openai_llm(openai=True, model=GPT_4O_MODEL_NAME)
         return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
@@ -99,14 +102,9 @@ def get_agent_executor(
         return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
-    elif agent == AgentType.MISTRAL:
-       llm = get_mixtral_fireworks()
-       return get_tools_agent_executor(
-           tools, llm, system_message, interrupt_before_action, CHECKPOINTER
-       )
     elif agent == AgentType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
-        return get_ffm_agent_executor(
+        return get_tools_agent_executor(
             tools, llm, system_message, interrupt_before_action, CHECKPOINTER
         )
     elif agent == AgentType.OLLAMA:
@@ -176,11 +174,11 @@ class ConfigurableAgent(RunnableBinding):
 
 
 class LLMType(str, Enum):
-    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
     GPT_35_TURBO = f"{GPT_35_TURBO_MODEL_NAME} (FreeDuckDuckGo)"
+    GPT_4 = f"{GPT_4_MODEL_NAME} (OpenAI)"
+    GPT_4O = f"{GPT_4O_MODEL_NAME} (OpenAI)"
     CLAUDE = f"{CLAUDE_MODEL_NAME} (FreeDuckDuckGo)"
     GEMINI = f"{GEMINI_MODEL_NAME} (Google)"
-    MISTRAL = f"{MISTRAL_MODEL_NAME} (Mistral)"
     FFM = f"{FFM_MODEL_NAME} (FFM)"
     OLLAMA = f"{OLLAMA_MODEL_NAME} (Ollama)"
 
@@ -190,15 +188,15 @@ def get_chatbot(
     system_message: str,
 ):
     if llm_type == LLMType.GPT_35_TURBO:
-        llm = get_openai_llm(openai=True, gpt4=True)
-    elif llm_type == LLMType.GPT_4:
-        llm = get_openai_llm(model=CLAUDE_MODEL_NAME)
-    elif llm_type == LLMType.CLAUDE:
         llm = get_openai_llm()
+    elif llm_type == LLMType.GPT_4:
+        llm = get_openai_llm(openai=True, gpt4=True)
+    elif llm_type == LLMType.GPT_4O:
+        llm = get_openai_llm(openai=True, model=GPT_4O_MODEL_NAME)
+    elif llm_type == LLMType.CLAUDE:
+        llm = get_openai_llm(model=CLAUDE_MODEL_NAME)
     elif llm_type == LLMType.GEMINI:
         llm = get_google_llm()
-    elif llm_type == LLMType.MISTRAL:
-        llm = get_mixtral_fireworks()
     elif llm_type == LLMType.FFM:
         llm = get_ffm_llm(model=FFM_MODEL_NAME)
     elif llm_type == LLMType.OLLAMA:
@@ -269,12 +267,14 @@ class ConfigurableRetrieval(RunnableBinding):
         retriever = get_retriever(assistant_id, thread_id)
         if llm_type == LLMType.GPT_35_TURBO:
             llm = get_openai_llm()
+        elif llm_type == LLMType.GPT_4:
+            llm = get_openai_llm(openai=True, gpt4=True)
+        elif llm_type == LLMType.GPT_4O:
+            llm = get_openai_llm(openai=True, model=GPT_4O_MODEL_NAME)
         elif llm_type == LLMType.CLAUDE:
-            llm = get_anthropic_llm()
+            llm = get_openai_llm(model=CLAUDE_MODEL_NAME)
         elif llm_type == LLMType.GEMINI:
             llm = get_google_llm()
-        elif llm_type == LLMType.MISTRAL:
-            llm = get_mixtral_fireworks()
         elif llm_type == LLMType.FFM:
             llm = get_ffm_llm(model=FFM_MODEL_NAME)
         elif llm_type == LLMType.OLLAMA:
